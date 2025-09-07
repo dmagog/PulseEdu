@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.health import router as health_router
 from app.routes.admin import router as admin_router
 from app.routes.auth import router as auth_router
+from app.routes.import_route import router as import_router
 
 # Request ID context variable
 request_id_var: ContextVar[str] = ContextVar("request_id", default="")
@@ -73,6 +74,7 @@ async def add_request_id(request: Request, call_next):
 app.include_router(health_router, tags=["health"])
 app.include_router(admin_router, tags=["admin"])
 app.include_router(auth_router, tags=["auth"])
+app.include_router(import_router, tags=["import"])
 
 @app.get("/")
 async def root() -> Dict[str, Any]:

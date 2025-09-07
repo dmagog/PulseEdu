@@ -8,7 +8,7 @@ from celery import Celery
 celery_app = Celery(
     "pulseedu",
     broker=os.getenv("RABBITMQ_URL", "amqp://pulseedu:pulseedu@localhost:5672//"),
-    backend=os.getenv("RABBITMQ_URL", "amqp://pulseedu:pulseedu@localhost:5672//"),
+    backend=None,  # Disable result backend for now
     include=[
         "worker.tasks",  # Will be created in future iterations
     ]

@@ -13,6 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 # Import our models
 from app.models.user import User, Role, UserRole, UserAuthLog
 from app.models.admin import AdminSetting
+from app.models.import_models import ImportJob, ImportError
 from sqlmodel import SQLModel
 
 # this is the Alembic Config object, which provides
