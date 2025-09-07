@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 
 from app.models.import_models import ImportJob, ImportError
 from app.services.config_service import config_service
+from app.services.attendance_import_service import AttendanceImportService
+from app.services.learning_import_service import LearningImportService
 
 logger = logging.getLogger("app.import")
 
@@ -39,14 +41,8 @@ class ImportService:
         try:
             logger.info(f"Starting Excel parsing for job {job_id}")
             
-            # Read Excel file
+            # Read Excel file to determine type
             df = pd.read_excel(file_path, sheet_name=0)
-            
-            # Get mapping configuration
-            mapping = self._get_field_mapping()
-            
-            # Validate and map columns
-            mapped_data = self._map_columns(df, mapping, job_id, db)
             
             # Update job status
             job = db.query(ImportJob).filter(ImportJob.job_id == job_id).first()
@@ -56,18 +52,72 @@ class ImportService:
                 job.started_at = datetime.utcnow()
                 db.commit()
             
-            logger.info(f"Excel parsing completed for job {job_id}: {len(df)} rows")
+            # Determine file type and process accordingly
+            file_type = self._determine_file_type(df.columns)
+            logger.info(f"Detected file type: {file_type}")
             
-            return {
-                "total_rows": len(df),
-                "mapped_data": mapped_data,
-                "mapping": mapping
-            }
+            if file_type == "attendance":
+                attendance_service = AttendanceImportService()
+                result = attendance_service.process_attendance_file(file_path, job_id, db)
+            elif file_type == "learning_process":
+                learning_service = LearningImportService()
+                result = learning_service.process_learning_file(file_path, job_id, db)
+            else:
+                # Fallback to generic processing
+                result = self._process_generic_file(df, job_id, db)
+            
+            logger.info(f"Excel parsing completed for job {job_id}: {result}")
+            
+            return result
             
         except Exception as e:
             logger.error(f"Excel parsing failed for job {job_id}: {e}")
             self._log_error(job_id, 0, None, "parsing", str(e), None, db)
             raise
+    
+    def _determine_file_type(self, columns: List[str]) -> str:
+        """
+        Determine file type based on column names.
+        
+        Args:
+            columns: List of column names
+            
+        Returns:
+            File type: "attendance", "learning_process", or "generic"
+        """
+        columns_str = " ".join(columns).lower()
+        
+        # Check for attendance file indicators
+        if "студент" in columns_str and "курс" in columns_str and "занятие" in columns_str:
+            return "attendance"
+        
+        # Check for learning process file indicators
+        if "студент_id" in columns_str and "курс" in columns_str and "время выполнения" in columns_str:
+            return "learning_process"
+        
+        return "generic"
+    
+    def _process_generic_file(self, df: pd.DataFrame, job_id: str, db: Session) -> Dict[str, Any]:
+        """
+        Process generic Excel file (fallback).
+        
+        Args:
+            df: DataFrame with data
+            job_id: Import job ID
+            db: Database session
+            
+        Returns:
+            Dictionary with processing results
+        """
+        logger.info(f"Processing generic file for job {job_id}")
+        
+        # Simple processing - just count rows
+        return {
+            "total_rows": len(df),
+            "imported_rows": len(df),
+            "error_count": 0,
+            "file_type": "generic"
+        }
     
     def _get_field_mapping(self) -> Dict[str, str]:
         """

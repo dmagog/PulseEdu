@@ -14,6 +14,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from app.models.user import User, Role, UserRole, UserAuthLog
 from app.models.admin import AdminSetting
 from app.models.import_models import ImportJob, ImportError
+from app.models.student import Student, Course, Lesson, Task, Attendance, TaskCompletion
 from sqlmodel import SQLModel
 
 # this is the Alembic Config object, which provides
