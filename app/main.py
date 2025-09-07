@@ -15,6 +15,7 @@ from app.routes.auth import router as auth_router
 from app.routes.import_route import router as import_router
 from app.routes.student import router as student_router
 from app.routes.teacher import router as teacher_router
+from app.routes.rop import router as rop_router
 
 # Request ID context variable
 request_id_var: ContextVar[str] = ContextVar("request_id", default="")
@@ -79,6 +80,7 @@ app.include_router(auth_router, tags=["auth"])
 app.include_router(import_router, tags=["import"])
 app.include_router(student_router, tags=["student"])
 app.include_router(teacher_router, tags=["teacher"])
+app.include_router(rop_router, tags=["rop"])
 
 @app.get("/")
 async def root() -> Dict[str, Any]:
