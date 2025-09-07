@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: pulseedu
+      POSTGRES_USER: pulseedu
+      POSTGRES_PASSWORD: pulseedu
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulseedu"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ message broker
+  mq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: pulseedu
+      RABBITMQ_DEFAULT_PASS: pulseedu
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI web application
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
+      - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
+      - APP_SECRET=dev-secret-key-change-in-production
+      - APP_BASE_URL=http://localhost:8000
+    depends_on:
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery worker (general)
+  worker:
+    build: .
+    environment:
+      - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
+      - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
+      - APP_SECRET=dev-secret-key-change-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: celery -A worker.celery_app worker --loglevel=info
+
+  # Celery Beat scheduler
+  beat:
+    build: .
+    environment:
+      - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
+      - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
+      - APP_SECRET=dev-secret-key-change-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: celery -A worker.celery_app beat --loglevel=info
+
+  # Flower monitoring
+  flower:
+    build: .
+    ports:
+      - "5555:5555"
+    environment:
+      - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
+      - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
+    depends_on:
+      mq:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: celery -A worker.celery_app flower --port=5555
+
+  # MailHog for email testing
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    environment:
+      - MH_STORAGE=maildir
+      - MH_MAILDIR_PATH=/maildir
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
