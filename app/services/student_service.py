@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_
 
 from app.models.student import Student, Course, Task, Attendance, TaskCompletion
+from app.services.metrics_service import MetricsService
 
 logger = logging.getLogger("app.student")
 
@@ -15,9 +16,12 @@ logger = logging.getLogger("app.student")
 class StudentService:
     """Service for managing student data and progress calculations."""
     
+    def __init__(self):
+        self.metrics_service = MetricsService()
+    
     def get_student_progress(self, student_id: str, db: Session) -> Dict[str, Any]:
         """
-        Get comprehensive student progress data.
+        Get comprehensive student progress data using MetricsService.
         
         Args:
             student_id: Student ID
@@ -29,27 +33,18 @@ class StudentService:
         try:
             logger.info(f"Getting progress for student: {student_id}")
             
-            # Get student info
-            student = db.query(Student).filter(Student.id == student_id).first()
-            if not student:
-                return {"error": "Student not found"}
+            # Use MetricsService for comprehensive progress calculation
+            progress_data = self.metrics_service.calculate_student_progress(student_id, db)
             
-            # Get attendance statistics
-            attendance_stats = self._get_attendance_stats(student_id, db)
+            if "error" in progress_data:
+                return progress_data
             
-            # Get task completion statistics
-            completion_stats = self._get_completion_stats(student_id, db)
+            # Add additional data for backward compatibility
+            progress_data["attendance"] = progress_data.get("attendance", {})
+            progress_data["completion"] = progress_data.get("tasks", {})
+            progress_data["courses"] = progress_data.get("courses", [])
             
-            # Get course progress
-            course_progress = self._get_course_progress(student_id, db)
-            
-            return {
-                "student_id": student_id,
-                "attendance": attendance_stats,
-                "completion": completion_stats,
-                "courses": course_progress,
-                "overall_progress": self._calculate_overall_progress(attendance_stats, completion_stats)
-            }
+            return progress_data
             
         except Exception as e:
             logger.error(f"Error getting student progress: {e}")
@@ -117,7 +112,7 @@ class StudentService:
     
     def get_upcoming_deadlines(self, student_id: str, db: Session, days_ahead: int = 7) -> List[Dict[str, Any]]:
         """
-        Get upcoming deadlines for student.
+        Get upcoming deadlines for student using MetricsService.
         
         Args:
             student_id: Student ID
@@ -130,35 +125,22 @@ class StudentService:
         try:
             logger.info(f"Getting upcoming deadlines for student: {student_id}")
             
-            # Calculate date range
-            now = datetime.utcnow()
-            future_date = now + timedelta(days=days_ahead)
+            # Get all upcoming deadlines from MetricsService
+            all_deadlines = self.metrics_service.get_upcoming_deadlines(days_ahead, db)
             
-            # Get upcoming deadlines
-            upcoming_deadlines = db.query(TaskCompletion).join(Task).filter(
-                and_(
-                    TaskCompletion.student_id == student_id,
-                    TaskCompletion.deadline.isnot(None),
-                    TaskCompletion.deadline > now,
-                    TaskCompletion.deadline <= future_date,
-                    TaskCompletion.status != "Выполнено"
-                )
-            ).order_by(TaskCompletion.deadline.asc()).all()
+            # Filter for specific student
+            student_deadlines = [d for d in all_deadlines if d["student_id"] == student_id]
             
-            deadlines = []
-            for completion in upcoming_deadlines:
-                days_left = (completion.deadline - now).days
-                urgency = "danger" if days_left <= 1 else "warning" if days_left <= 3 else "info"
-                
-                deadlines.append({
-                    "task_name": completion.task.name,
-                    "deadline": completion.deadline,
-                    "days_left": days_left,
-                    "urgency": urgency,
-                    "task_type": completion.task.task_type
-                })
+            # Convert urgency to UI classes
+            for deadline in student_deadlines:
+                if deadline["urgency"] == "critical":
+                    deadline["urgency"] = "danger"
+                elif deadline["urgency"] == "high":
+                    deadline["urgency"] = "warning"
+                else:
+                    deadline["urgency"] = "info"
             
-            return deadlines
+            return student_deadlines
             
         except Exception as e:
             logger.error(f"Error getting upcoming deadlines: {e}")

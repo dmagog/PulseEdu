@@ -10,7 +10,8 @@ celery_app = Celery(
     broker=os.getenv("RABBITMQ_URL", "amqp://pulseedu:pulseedu@localhost:5672//"),
     backend=None,  # Disable result backend for now
     include=[
-        "worker.tasks",  # Will be created in future iterations
+        "worker.tasks",
+        "worker.beat_tasks",
     ]
 )
 
@@ -30,12 +31,22 @@ celery_app.conf.update(
 
 # Beat schedule (for periodic tasks)
 celery_app.conf.beat_schedule = {
-    # TODO: Add periodic tasks in future iterations
-    # Example:
-    # "check-deadlines": {
-    #     "task": "worker.tasks.check_deadlines",
-    #     "schedule": 60.0,  # Every minute
-    # },
+    'recalculate-metrics': {
+        'task': 'worker.beat_tasks.recalculate_all_metrics',
+        'schedule': 300.0,  # Every 5 minutes
+    },
+    'check-deadlines': {
+        'task': 'worker.beat_tasks.check_deadlines',
+        'schedule': 60.0,  # Every minute
+    },
+    'update-task-statuses': {
+        'task': 'worker.beat_tasks.update_task_statuses',
+        'schedule': 180.0,  # Every 3 minutes
+    },
+    'daily-report': {
+        'task': 'worker.beat_tasks.generate_daily_report',
+        'schedule': 86400.0,  # Every 24 hours
+    },
 }
 
 # Queue configuration

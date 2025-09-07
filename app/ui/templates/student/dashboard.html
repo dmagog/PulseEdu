@@ -54,8 +54,8 @@
                     <div class="card-body">
                         <i class="bi bi-check-circle text-primary" style="font-size: 2rem;"></i>
                         <h5 class="card-title mt-2">Выполнение</h5>
-                        <h3 class="text-primary">{{ "%.1f"|format(progress.completion.percentage) }}%</h3>
-                        <small class="text-muted">{{ progress.completion.completed }}/{{ progress.completion.total }} заданий</small>
+                        <h3 class="text-primary">{{ "%.1f"|format(progress.tasks.percentage) }}%</h3>
+                        <small class="text-muted">{{ progress.tasks.completed }}/{{ progress.tasks.total }} заданий</small>
                     </div>
                 </div>
             </div>
@@ -88,8 +88,8 @@
                                             <h6 class="card-title">{{ course.course_name }}</h6>
                                             <div class="progress mb-2" style="height: 8px;">
                                                 <div class="progress-bar bg-success" role="progressbar" 
-                                                     style="width: {{ course.progress_percentage }}%"
-                                                     aria-valuenow="{{ course.progress_percentage }}" 
+                                                     style="width: {{ course.task_progress }}%"
+                                                     aria-valuenow="{{ course.task_progress }}" 
                                                      aria-valuemin="0" aria-valuemax="100">
                                                 </div>
                                             </div>
@@ -98,7 +98,7 @@
                                             </small>
                                         </div>
                                         <div class="col-md-4 text-end">
-                                            <span class="badge bg-success fs-6">{{ "%.1f"|format(course.progress_percentage) }}%</span>
+                                            <span class="badge bg-success fs-6">{{ "%.1f"|format(course.task_progress) }}%</span>
                                         </div>
                                     </div>
                                 </div>
