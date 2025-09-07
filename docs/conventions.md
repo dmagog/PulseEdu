@@ -14,6 +14,13 @@
 - Используй **только** стек из `@vision.md` (FastAPI, SQLModel+Alembic, Jinja2+Bootstrap, Celery+RabbitMQ, pandas+openpyxl, logging, Chart.js CDN, SMTP/MailHog).
 - Запрещено подтягивать фронтовые сборщики, SPA‑фреймворки, ORM‑замены, DI‑контейнеры и т.п.
 
+## 2.1) Git workflow
+- **Основная ветка разработки**: `develop` (все новые итерации разрабатываются здесь)
+- **Стабильная ветка**: `main` (только для релизов и стабильных версий)
+- **Ветки фич**: `feat/I{N}-{кратко}` (например, `feat/I1-config`) для отдельных итераций
+- Коммиты в `develop` после завершения каждой итерации
+- PR из `develop` в `main` только для релизов
+
 ## 3) Структура проекта и наименование
 - Файлы и каталоги совпадают со структурой из `@vision.md` (`app/models|routes|services|database|ui`, `worker/*`, `migrations/*`).
 - **models**: один модуль — один домен (например, `assessment.py`).
