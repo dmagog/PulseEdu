@@ -3,18 +3,60 @@ Admin routes for system configuration.
 """
 import logging
 from typing import Dict, Any
+from datetime import datetime
 
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 
+from app.database.session import get_session
 from app.services.config_service import config_service
+from app.services.rbac_service import RBACService
+from app.middleware.auth import require_admin
+from app.models.import_models import ImportJob, ImportError
+from app.models.student import Student, Course, Task, Attendance, TaskCompletion
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 logger = logging.getLogger("app.admin")
 
 # Templates
 templates = Jinja2Templates(directory="app/ui/templates")
+rbac_service = RBACService()
+
+
+@router.get("/", response_class=HTMLResponse)
+async def admin_dashboard(request: Request, db: Session = Depends(get_session)) -> HTMLResponse:
+    """
+    Admin dashboard with system metrics and overview.
+    """
+    logger.info("Admin dashboard requested")
+    
+    try:
+        # Get system metrics
+        metrics = {
+            "total_students": db.query(Student).count(),
+            "total_courses": db.query(Course).count(),
+            "total_tasks": db.query(Task).count(),
+            "total_import_jobs": db.query(ImportJob).count(),
+            "recent_imports": db.query(ImportJob).order_by(ImportJob.created_at.desc()).limit(5).all(),
+            "system_uptime": "N/A",  # Would be calculated in real system
+            "active_users": db.query(Student).count()  # Simplified
+        }
+        
+        return templates.TemplateResponse("admin/dashboard.html", {
+            "request": request,
+            "title": "Админ-панель",
+            "metrics": metrics
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading admin dashboard: {e}")
+        return templates.TemplateResponse("admin/dashboard.html", {
+            "request": request,
+            "title": "Админ-панель",
+            "error": str(e)
+        })
 
 
 @router.get("/settings", response_class=HTMLResponse)
@@ -88,3 +130,73 @@ async def update_settings(
         """,
         status_code=200
     )
+
+
+@router.get("/import-jobs", response_class=HTMLResponse)
+async def admin_import_jobs(request: Request, db: Session = Depends(get_session)) -> HTMLResponse:
+    """
+    Admin page for viewing import jobs and their status.
+    """
+    logger.info("Admin import jobs page requested")
+    
+    try:
+        # Get all import jobs with pagination
+        import_jobs = db.query(ImportJob).order_by(ImportJob.created_at.desc()).limit(50).all()
+        
+        # Get import statistics
+        stats = {
+            "total_jobs": db.query(ImportJob).count(),
+            "completed_jobs": db.query(ImportJob).filter(ImportJob.status == "completed").count(),
+            "failed_jobs": db.query(ImportJob).filter(ImportJob.status == "failed").count(),
+            "pending_jobs": db.query(ImportJob).filter(ImportJob.status == "pending").count(),
+            "processing_jobs": db.query(ImportJob).filter(ImportJob.status == "processing").count()
+        }
+        
+        return templates.TemplateResponse("admin/import_jobs.html", {
+            "request": request,
+            "title": "Журнал импорта",
+            "import_jobs": import_jobs,
+            "stats": stats
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading import jobs: {e}")
+        return templates.TemplateResponse("admin/import_jobs.html", {
+            "request": request,
+            "title": "Журнал импорта",
+            "error": str(e)
+        })
+
+
+@router.get("/users", response_class=HTMLResponse)
+async def admin_users(request: Request, db: Session = Depends(get_session)) -> HTMLResponse:
+    """
+    Admin page for managing users and roles.
+    """
+    logger.info("Admin users page requested")
+    
+    try:
+        # Get all users with their roles
+        users = db.query(Student).all()
+        roles = db.query(Role).all()
+        
+        # Get user role mappings
+        user_roles = {}
+        for user in users:
+            user_roles[user.id] = rbac_service.get_user_roles(user.id, db)
+        
+        return templates.TemplateResponse("admin/users.html", {
+            "request": request,
+            "title": "Управление пользователями",
+            "users": users,
+            "roles": roles,
+            "user_roles": user_roles
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading users: {e}")
+        return templates.TemplateResponse("admin/users.html", {
+            "request": request,
+            "title": "Управление пользователями",
+            "error": str(e)
+        })

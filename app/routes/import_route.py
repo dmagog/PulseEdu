@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.database.session import get_session
 from app.models.import_models import ImportJob, ImportError
 from app.services.import_service import ImportService
+from app.middleware.auth import require_import_access
 from worker.tasks import process_import_job
 
 router = APIRouter(prefix="/import", tags=["import"])
