@@ -13,6 +13,7 @@ from app.routes.health import router as health_router
 from app.routes.admin import router as admin_router
 from app.routes.auth import router as auth_router
 from app.routes.import_route import router as import_router
+from app.routes.student import router as student_router
 
 # Request ID context variable
 request_id_var: ContextVar[str] = ContextVar("request_id", default="")
@@ -75,6 +76,7 @@ app.include_router(health_router, tags=["health"])
 app.include_router(admin_router, tags=["admin"])
 app.include_router(auth_router, tags=["auth"])
 app.include_router(import_router, tags=["import"])
+app.include_router(student_router, tags=["student"])
 
 @app.get("/")
 async def root() -> Dict[str, Any]:
