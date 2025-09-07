@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - PulseEdu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1>{{ title }}</h1>
+                
+                <!-- Current Time Info -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Текущее время системы</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Режим:</strong> 
+                            {% if is_fake_time %}
+                                <span class="badge bg-warning">Фиктивное время</span>
+                            {% else %}
+                                <span class="badge bg-success">Реальное время</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Текущее время:</strong> {{ current_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    </div>
+                </div>
+
+                <!-- Settings Form -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Настройки системы</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="/admin/settings">
+                            <!-- Time Settings -->
+                            <div class="mb-4">
+                                <h6>Настройки времени</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="app_now_mode" class="form-label">Режим времени</label>
+                                        <select class="form-select" id="app_now_mode" name="app_now_mode">
+                                            <option value="real" {% if settings.APP_NOW_MODE == "real" %}selected{% endif %}>Реальное время</option>
+                                            <option value="fake" {% if settings.APP_NOW_MODE == "fake" %}selected{% endif %}>Фиктивное время</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="app_fake_now" class="form-label">Фиктивная дата (YYYY-MM-DD)</label>
+                                        <input type="date" class="form-control" id="app_fake_now" name="app_fake_now" 
+                                               value="{{ settings.APP_FAKE_NOW }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- LLM Settings -->
+                            <div class="mb-4">
+                                <h6>Настройки LLM</h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label for="llm_max_recs" class="form-label">Макс. рекомендаций</label>
+                                        <input type="number" class="form-control" id="llm_max_recs" name="llm_max_recs" 
+                                               value="{{ settings.LLM_MAX_RECS }}" min="1" max="10">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="llm_rec_max_chars" class="form-label">Макс. символов в рекомендации</label>
+                                        <input type="number" class="form-control" id="llm_rec_max_chars" name="llm_rec_max_chars" 
+                                               value="{{ settings.LLM_REC_MAX_CHARS }}" min="50" max="1000">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="llm_timeout_seconds" class="form-label">Таймаут (сек)</label>
+                                        <input type="number" class="form-control" id="llm_timeout_seconds" name="llm_timeout_seconds" 
+                                               value="{{ settings.LLM_TIMEOUT_SECONDS }}" min="1" max="60">
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <label for="llm_cache_ttl_hours" class="form-label">TTL кеша (часы)</label>
+                                        <input type="number" class="form-control" id="llm_cache_ttl_hours" name="llm_cache_ttl_hours" 
+                                               value="{{ settings.LLM_CACHE_TTL_HOURS }}" min="1" max="168">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Сохранить настройки</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
