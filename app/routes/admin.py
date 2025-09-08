@@ -631,3 +631,165 @@ async def assign_staff_role(
             """,
             status_code=500
         )
+
+
+@router.get("/students", response_class=HTMLResponse)
+async def admin_students(
+    request: Request,
+    group_id: str = None,
+    course_id: str = None,
+    page: int = 1,
+    per_page: int = 50,
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    Admin page for managing students.
+    """
+    logger.info("Admin students page requested")
+    
+    try:
+        # Build query for students
+        query = db.query(Student)
+        
+        # Apply filters
+        if group_id:
+            query = query.filter(Student.group_id == group_id)
+        if course_id:
+            # Get students who are enrolled in this course
+            query = query.join(Attendance).join(Lesson).filter(Lesson.course_id == course_id).distinct()
+        
+        # Get total count for pagination
+        total_students = query.count()
+        
+        # Apply pagination
+        offset = (page - 1) * per_page
+        students = query.order_by(Student.name, Student.id).offset(offset).limit(per_page).all()
+        
+        # Calculate total pages
+        total_pages = (total_students + per_page - 1) // per_page
+        
+        # Get unique groups for filter dropdown
+        groups = db.query(Student.group_id).filter(
+            Student.group_id.isnot(None)
+        ).distinct().all()
+        group_list = [group[0] for group in groups if group[0]]
+        
+        # Get courses for filter dropdown
+        courses = db.query(Course).all()
+        
+        # Get statistics
+        stats = {
+            "total_students": db.query(Student).count(),
+            "students_with_groups": db.query(Student).filter(Student.group_id.isnot(None)).count(),
+            "students_without_groups": db.query(Student).filter(Student.group_id.is_(None)).count(),
+            "active_students": db.query(Student).count()  # Simplified - all students are considered active
+        }
+        
+        return templates.TemplateResponse("admin/students.html", {
+            "request": request,
+            "title": "Управление студентами",
+            "students": students,
+            "stats": stats,
+            "total_students": total_students,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": total_pages,
+            "groups": group_list,
+            "courses": courses,
+            "filters": {
+                "group_id": group_id,
+                "course_id": course_id
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading students: {e}")
+        return templates.TemplateResponse("admin/students.html", {
+            "request": request,
+            "title": "Управление студентами",
+            "error": str(e)
+        })
+
+
+@router.post("/students/edit", response_class=HTMLResponse)
+async def edit_student(
+    request: Request,
+    student_id: str = Form(...),
+    name: str = Form(None),
+    email: str = Form(None),
+    group_id: str = Form(None),
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    Edit student information.
+    """
+    logger.info(f"Editing student: {student_id}")
+    
+    try:
+        # Find student
+        student = db.query(Student).filter(Student.id == student_id).first()
+        if not student:
+            return HTMLResponse(
+                content=f"""
+                <html>
+                    <head>
+                        <meta http-equiv="refresh" content="3; url=/admin/students">
+                        <title>Ошибка</title>
+                    </head>
+                    <body>
+                        <p>Студент не найден. Перенаправление...</p>
+                        <script>window.location.href = '/admin/students';</script>
+                    </body>
+                </html>
+                """,
+                status_code=404
+            )
+        
+        # Update student data
+        if name is not None:
+            student.name = name
+        if email is not None:
+            student.email = email
+        if group_id is not None:
+            student.group_id = group_id if group_id.strip() else None
+        
+        student.updated_at = datetime.utcnow()
+        
+        db.commit()
+        
+        logger.info(f"Student {student_id} updated successfully")
+        
+        return HTMLResponse(
+            content=f"""
+            <html>
+                <head>
+                    <meta http-equiv="refresh" content="0; url=/admin/students">
+                    <title>Студент обновлен</title>
+                </head>
+                <body>
+                    <p>Информация о студенте успешно обновлена. Перенаправление...</p>
+                    <script>window.location.href = '/admin/students';</script>
+                </body>
+            </html>
+            """,
+            status_code=200
+        )
+        
+    except Exception as e:
+        logger.error(f"Error editing student: {e}")
+        db.rollback()
+        return HTMLResponse(
+            content=f"""
+            <html>
+                <head>
+                    <meta http-equiv="refresh" content="3; url=/admin/students">
+                    <title>Ошибка</title>
+                </head>
+                <body>
+                    <p>Ошибка при обновлении студента: {str(e)}. Перенаправление...</p>
+                    <script>window.location.href = '/admin/students';</script>
+                </body>
+            </html>
+            """,
+            status_code=500
+        )
