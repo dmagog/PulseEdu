@@ -67,3 +67,27 @@ class UserAuthLog(SQLModel, table=True):
     user_agent: Optional[str] = Field(default=None, max_length=500)
     reason: Optional[str] = Field(default=None, max_length=200)
     user_id: Optional[str] = Field(default=None, max_length=50)
+
+
+class UserCourseAssignment(SQLModel, table=True):
+    """User-Course assignment model for staff monitoring courses."""
+    
+    __tablename__ = "user_course_assignments"
+    
+    assignment_id: int = Field(primary_key=True)
+    user_id: str = Field(foreign_key="users.user_id", max_length=50)
+    course_id: int = Field(foreign_key="courses.id")
+    assignment_type: str = Field(max_length=20)  # 'teacher', 'rop', 'monitor'
+    assigned_at: datetime = Field(default_factory=datetime.utcnow)
+    assigned_by: Optional[str] = Field(default=None, max_length=50)
+    is_active: bool = Field(default=True)
+    
+    # Relationships
+    user: User = Relationship()
+    course: "Course" = Relationship()
+
+
+# Import Course to avoid circular imports
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.models.student import Course

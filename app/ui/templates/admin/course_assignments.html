@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-book text-primary"></i>
+                    {{ title }}
+                </h1>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignCourseModal">
+                        <i class="bi bi-plus-circle"></i> Назначить курс
+                    </button>
+                </div>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                Ошибка загрузки данных: {{ error }}
+            </div>
+            {% endif %}
+
+            <!-- Статистика назначений -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ stats.total_assignments }}</h4>
+                                    <p class="card-text">Всего назначений</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-book fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ stats.active_assignments }}</h4>
+                                    <p class="card-text">Активных</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-check-circle fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ stats.teacher_assignments }}</h4>
+                                    <p class="card-text">Преподавателям</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-person-badge fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ stats.rop_assignments }}</h4>
+                                    <p class="card-text">РОПам</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-graph-up fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Фильтры -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" action="/admin/course-assignments" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="user_id" class="form-label">Пользователь</label>
+                            <select class="form-select" id="user_id" name="user_id">
+                                <option value="">Все пользователи</option>
+                                {% for user in staff_users %}
+                                <option value="{{ user.user_id }}" {% if filters.user_id == user.user_id %}selected{% endif %}>
+                                    {{ user.display_name or user.login }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="course_id" class="form-label">Курс</label>
+                            <select class="form-select" id="course_id" name="course_id">
+                                <option value="">Все курсы</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}" {% if filters.course_id == course.id|string %}selected{% endif %}>
+                                    {{ course.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="bi bi-funnel"></i> Применить фильтры
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Таблица назначений -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-table"></i>
+                        Список назначений курсов
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if assignments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Пользователь</th>
+                                    <th>Курс</th>
+                                    <th>Тип назначения</th>
+                                    <th>Статус</th>
+                                    <th>Назначен</th>
+                                    <th>Назначил</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assignment in assignments %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>{{ assignment.user.display_name or assignment.user.login }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ assignment.user.email }}</small>
+                                            <br>
+                                            <code class="small">{{ assignment.user.user_id }}</code>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ assignment.course.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">ID: {{ assignment.course.id }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if assignment.assignment_type == 'teacher' %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-person-badge"></i> Преподаватель
+                                            </span>
+                                        {% elif assignment.assignment_type == 'rop' %}
+                                            <span class="badge bg-info">
+                                                <i class="bi bi-graph-up"></i> РОП
+                                            </span>
+                                        {% elif assignment.assignment_type == 'monitor' %}
+                                            <span class="badge bg-warning">
+                                                <i class="bi bi-eye"></i> Наблюдатель
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ assignment.assignment_type }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if assignment.is_active %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Активно
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-x-circle"></i> Неактивно
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ assignment.assigned_at.strftime('%d.%m.%Y %H:%M') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ assignment.assigned_by or 'Система' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            {% if assignment.is_active %}
+                                                <button class="btn btn-outline-warning" 
+                                                        onclick="deactivateAssignment({{ assignment.assignment_id }})"
+                                                        title="Деактивировать">
+                                                    <i class="bi bi-pause-circle"></i>
+                                                </button>
+                                            {% else %}
+                                                <button class="btn btn-outline-success" 
+                                                        onclick="reactivateAssignment({{ assignment.assignment_id }})"
+                                                        title="Активировать">
+                                                    <i class="bi bi-play-circle"></i>
+                                                </button>
+                                            {% endif %}
+                                            <button class="btn btn-outline-info" 
+                                                    onclick="viewAssignmentDetails({{ assignment.assignment_id }})"
+                                                    title="Подробности">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-book fs-1 text-muted"></i>
+                        <h5 class="text-muted mt-3">Назначения не найдены</h5>
+                        <p class="text-muted">
+                            {% if filters.user_id or filters.course_id %}
+                                По выбранным фильтрам назначения не найдены
+                            {% else %}
+                                В системе пока нет назначений курсов
+                            {% endif %}
+                        </p>
+                        {% if not filters.user_id and not filters.course_id %}
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignCourseModal">
+                            <i class="bi bi-plus-circle"></i> Создать первое назначение
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно назначения курса -->
+<div class="modal fade" id="assignCourseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle"></i>
+                    Назначить курс пользователю
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="/admin/course-assignments/assign">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label">Пользователь</label>
+                        <select class="form-select" id="user_id" name="user_id" required>
+                            <option value="">Выберите пользователя</option>
+                            {% for user in staff_users %}
+                            <option value="{{ user.user_id }}">
+                                {{ user.display_name or user.login }} ({{ user.email }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="course_id" class="form-label">Курс</label>
+                        <select class="form-select" id="course_id" name="course_id" required>
+                            <option value="">Выберите курс</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}">
+                                {{ course.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="assignment_type" class="form-label">Тип назначения</label>
+                        <select class="form-select" id="assignment_type" name="assignment_type" required>
+                            <option value="">Выберите тип</option>
+                            <option value="teacher">Преподаватель</option>
+                            <option value="rop">РОП</option>
+                            <option value="monitor">Наблюдатель</option>
+                        </select>
+                        <div class="form-text">
+                            <strong>Преподаватель</strong> - ведет курс<br>
+                            <strong>РОП</strong> - наблюдает за курсом<br>
+                            <strong>Наблюдатель</strong> - имеет доступ к просмотру
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Назначить курс</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function deactivateAssignment(assignmentId) {
+    if (confirm('Деактивировать назначение курса?')) {
+        // TODO: Реализовать деактивацию
+        alert('Деактивация назначения: ' + assignmentId);
+    }
+}
+
+function reactivateAssignment(assignmentId) {
+    if (confirm('Активировать назначение курса?')) {
+        // TODO: Реализовать активацию
+        alert('Активация назначения: ' + assignmentId);
+    }
+}
+
+function viewAssignmentDetails(assignmentId) {
+    // TODO: Реализовать просмотр подробностей
+    alert('Подробности назначения: ' + assignmentId);
+}
+</script>
+{% endblock %}

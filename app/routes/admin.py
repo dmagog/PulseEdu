@@ -17,7 +17,7 @@ from app.services.rbac_service import RBACService
 from app.middleware.auth import require_admin
 from app.models.import_models import ImportJob, ImportErrorLog
 from app.models.student import Student, Course, Task, Attendance, TaskCompletion
-from app.models.user import User, Role, UserRole
+from app.models.user import User, Role, UserRole, UserCourseAssignment
 from app.models.llm_models import LLMCallLog, LLMRecommendation, LLMFeedback
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -788,6 +788,158 @@ async def edit_student(
                 <body>
                     <p>Ошибка при обновлении студента: {str(e)}. Перенаправление...</p>
                     <script>window.location.href = '/admin/students';</script>
+                </body>
+            </html>
+            """,
+            status_code=500
+        )
+
+
+@router.get("/course-assignments", response_class=HTMLResponse)
+async def admin_course_assignments(
+    request: Request,
+    user_id: str = None,
+    course_id: str = None,
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    Admin page for managing course assignments to staff.
+    """
+    logger.info("Admin course assignments page requested")
+    
+    try:
+        # Get all course assignments
+        query = db.query(UserCourseAssignment).join(User).join(Course)
+        
+        # Apply filters
+        if user_id:
+            query = query.filter(UserCourseAssignment.user_id == user_id)
+        if course_id:
+            query = query.filter(UserCourseAssignment.course_id == course_id)
+        
+        assignments = query.order_by(UserCourseAssignment.assigned_at.desc()).all()
+        
+        # Get all users with staff roles for dropdown
+        staff_users = []
+        for user in db.query(User).all():
+            user_roles = rbac_service.get_user_roles(user.user_id, db)
+            if any(role in ["teacher", "rop", "data_operator"] for role in user_roles):
+                staff_users.append(user)
+        
+        # Get all courses
+        courses = db.query(Course).all()
+        
+        # Get statistics
+        stats = {
+            "total_assignments": db.query(UserCourseAssignment).count(),
+            "active_assignments": db.query(UserCourseAssignment).filter(UserCourseAssignment.is_active == True).count(),
+            "teacher_assignments": db.query(UserCourseAssignment).filter(UserCourseAssignment.assignment_type == "teacher").count(),
+            "rop_assignments": db.query(UserCourseAssignment).filter(UserCourseAssignment.assignment_type == "rop").count()
+        }
+        
+        return templates.TemplateResponse("admin/course_assignments.html", {
+            "request": request,
+            "title": "Назначение курсов",
+            "assignments": assignments,
+            "staff_users": staff_users,
+            "courses": courses,
+            "stats": stats,
+            "filters": {
+                "user_id": user_id,
+                "course_id": course_id
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading course assignments: {e}")
+        return templates.TemplateResponse("admin/course_assignments.html", {
+            "request": request,
+            "title": "Назначение курсов",
+            "error": str(e)
+        })
+
+
+@router.post("/course-assignments/assign", response_class=HTMLResponse)
+async def assign_course_to_user(
+    request: Request,
+    user_id: str = Form(...),
+    course_id: int = Form(...),
+    assignment_type: str = Form(...),
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    Assign a course to a user.
+    """
+    logger.info(f"Assigning course {course_id} to user {user_id} as {assignment_type}")
+    
+    try:
+        # Check if assignment already exists
+        existing = db.query(UserCourseAssignment).filter(
+            UserCourseAssignment.user_id == user_id,
+            UserCourseAssignment.course_id == course_id,
+            UserCourseAssignment.assignment_type == assignment_type,
+            UserCourseAssignment.is_active == True
+        ).first()
+        
+        if existing:
+            return HTMLResponse(
+                content=f"""
+                <html>
+                    <head>
+                        <meta http-equiv="refresh" content="3; url=/admin/course-assignments">
+                        <title>Ошибка</title>
+                    </head>
+                    <body>
+                        <p>Назначение уже существует. Перенаправление...</p>
+                        <script>window.location.href = /admin/course-assignments;</script>
+                    </body>
+                </html>
+                """,
+                status_code=400
+            )
+        
+        # Create new assignment
+        assignment = UserCourseAssignment(
+            user_id=user_id,
+            course_id=course_id,
+            assignment_type=assignment_type,
+            assigned_by="admin"  # TODO: Get from session
+        )
+        
+        db.add(assignment)
+        db.commit()
+        
+        logger.info(f"Course {course_id} assigned to user {user_id} successfully")
+        
+        return HTMLResponse(
+            content=f"""
+            <html>
+                <head>
+                    <meta http-equiv="refresh" content="0; url=/admin/course-assignments">
+                    <title>Курс назначен</title>
+                </head>
+                <body>
+                    <p>Курс успешно назначен. Перенаправление...</p>
+                    <script>window.location.href = /admin/course-assignments;</script>
+                </body>
+            </html>
+            """,
+            status_code=200
+        )
+        
+    except Exception as e:
+        logger.error(f"Error assigning course: {e}")
+        db.rollback()
+        return HTMLResponse(
+            content=f"""
+            <html>
+                <head>
+                    <meta http-equiv="refresh" content="3; url=/admin/course-assignments">
+                    <title>Ошибка</title>
+                </head>
+                <body>
+                    <p>Ошибка при назначении курса: {str(e)}. Перенаправление...</p>
+                    <script>window.location.href = /admin/course-assignments;</script>
                 </body>
             </html>
             """,
