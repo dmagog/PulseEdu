@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Заголовок -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Главная</a></li>
+                    <li class="breadcrumb-item"><a href="/course/{{ course.id }}">{{ course.name }}</a></li>
+                    <li class="breadcrumb-item active">Студенты</li>
+                </ol>
+            </nav>
+            
+            <h1 class="mb-3">
+                <i class="bi bi-people text-primary"></i>
+                Студенты курса: {{ course.name }}
+            </h1>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-people text-primary mb-2" style="font-size: 2rem;"></i>
+                    <h5 class="card-title">{{ students_data|length }}</h5>
+                    <p class="card-text">Всего студентов</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up text-success mb-2" style="font-size: 2rem;"></i>
+                    <h5 class="card-title">
+                        {% if students_data %}
+                            {{ "%.1f"|format(students_data|map(attribute='attendance_rate')|sum / students_data|length) }}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </h5>
+                    <p class="card-text">Средняя посещаемость</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-clipboard-check text-warning mb-2" style="font-size: 2rem;"></i>
+                    <h5 class="card-title">
+                        {% if students_data %}
+                            {{ "%.1f"|format(students_data|map(attribute='completion_rate')|sum / students_data|length) }}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </h5>
+                    <p class="card-text">Среднее выполнение</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список студентов -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i>
+                        Детальная статистика студентов
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if students_data %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Студент</th>
+                                    <th>Посещаемость</th>
+                                    <th>Выполнение заданий</th>
+                                    <th>Общий прогресс</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student_data in students_data %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-person-circle text-primary me-2" style="font-size: 1.5rem;"></i>
+                                            <div>
+                                                <strong>{{ student_data.student.name or student_data.student.id }}</strong>
+                                                <br>
+                                                <small class="text-muted">ID: {{ student_data.student.id }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="progress mb-1" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ student_data.attendance_rate }}%"
+                                                 aria-valuenow="{{ student_data.attendance_rate }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                {{ student_data.attendance_rate }}%
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ student_data.attended_count }}/{{ student_data.total_attendances }} занятий
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="progress mb-1" style="height: 20px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" 
+                                                 style="width: {{ student_data.completion_rate }}%"
+                                                 aria-valuenow="{{ student_data.completion_rate }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                {{ student_data.completion_rate }}%
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ student_data.completed_tasks }}/{{ student_data.total_tasks }} заданий
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% set overall_progress = (student_data.attendance_rate + student_data.completion_rate) / 2 %}
+                                        <div class="progress mb-1" style="height: 20px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" 
+                                                 style="width: {{ overall_progress }}%"
+                                                 aria-valuenow="{{ overall_progress }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                {{ "%.1f"|format(overall_progress) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if overall_progress >= 80 %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Отлично
+                                            </span>
+                                        {% elif overall_progress >= 60 %}
+                                            <span class="badge bg-warning">
+                                                <i class="bi bi-exclamation-triangle"></i> Хорошо
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-exclamation-circle"></i> Требует внимания
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Студенты курса пока не добавлены.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Действия -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="/course/{{ course.id }}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i>
+                Назад к курсу
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

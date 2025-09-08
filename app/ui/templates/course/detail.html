@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Заголовок курса -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Главная</a></li>
+                    <li class="breadcrumb-item"><a href="/student/courses">Курсы</a></li>
+                    <li class="breadcrumb-item active">{{ course.name }}</li>
+                </ol>
+            </nav>
+            
+            <h1 class="mb-3">
+                <i class="bi bi-book text-primary"></i>
+                {{ course.name }}
+            </h1>
+            
+            {% if course.description %}
+            <p class="lead text-muted">{{ course.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Статистика курса -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-people text-primary mb-2" style="font-size: 2rem;"></i>
+                    <h5 class="card-title">{{ stats.total_students }}</h5>
+                    <p class="card-text">Студентов</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-book text-success mb-2" style="font-size: 2rem;"></i>
+                    <h5 class="card-title">{{ stats.total_lessons }}</h5>
+                    <p class="card-text">Занятий</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-clipboard-check text-warning mb-2" style="font-size: 2rem;"></i>
+                    <h5 class="card-title">{{ stats.total_tasks }}</h5>
+                    <p class="card-text">Заданий</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up text-info mb-2" style="font-size: 2rem;"></i>
+                    <h5 class="card-title">{{ attendance_rate }}%</h5>
+                    <p class="card-text">Посещаемость</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Навигация по разделам -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-tabs" id="courseTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline" type="button" role="tab">
+                        <i class="bi bi-calendar-event"></i> Хронология
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="lessons-tab" data-bs-toggle="tab" data-bs-target="#lessons" type="button" role="tab">
+                        <i class="bi bi-book"></i> Занятия
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab">
+                        <i class="bi bi-clipboard-check"></i> Задания
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab">
+                        <i class="bi bi-people"></i> Студенты
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Содержимое вкладок -->
+    <div class="tab-content" id="courseTabsContent">
+        <!-- Хронология курса -->
+        <div class="tab-pane fade show active" id="timeline" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <h4 class="mb-3">
+                        <i class="bi bi-calendar-event text-primary"></i>
+                        Хронология курса
+                    </h4>
+                    
+                    {% if timeline_events %}
+                    <div class="timeline">
+                        {% for event in timeline_events %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-{{ event.color }} text-white">
+                                <i class="bi {{ event.icon }}"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <span class="badge bg-{{ event.color }} me-2">
+                                                {% if event.type == 'lesson' %}
+                                                    Занятие {{ event.number }}
+                                                {% else %}
+                                                    {{ event.task_type|title if event.task_type else 'Задание' }}
+                                                {% endif %}
+                                            </span>
+                                            {{ event.title }}
+                                        </h6>
+                                        {% if event.date %}
+                                        <p class="card-text text-muted mb-0">
+                                            <i class="bi bi-calendar"></i>
+                                            {{ event.date.strftime('%d.%m.%Y %H:%M') if event.date else 'Дата не указана' }}
+                                        </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Хронология курса пока не заполнена.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Занятия -->
+        <div class="tab-pane fade" id="lessons" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <h4 class="mb-3">
+                        <i class="bi bi-book text-success"></i>
+                        Занятия курса
+                    </h4>
+                    
+                    {% if lessons %}
+                    <div class="row">
+                        {% for lesson in lessons %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <span class="badge bg-primary me-2">{{ lesson.lesson_number }}</span>
+                                        {{ lesson.title }}
+                                    </h6>
+                                    {% if lesson.date %}
+                                    <p class="card-text text-muted">
+                                        <i class="bi bi-calendar"></i>
+                                        {{ lesson.date.strftime('%d.%m.%Y %H:%M') }}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Занятия курса пока не добавлены.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Задания -->
+        <div class="tab-pane fade" id="tasks" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <h4 class="mb-3">
+                        <i class="bi bi-clipboard-check text-warning"></i>
+                        Задания курса
+                    </h4>
+                    
+                    {% if tasks %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Название</th>
+                                    <th>Тип</th>
+                                    <th>Дедлайн</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in tasks %}
+                                <tr>
+                                    <td>{{ task.name }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if task.task_type == 'assignment' else 'info' }}">
+                                            {{ task.task_type|title if task.task_type else 'Задание' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if task.deadline %}
+                                            {{ task.deadline.strftime('%d.%m.%Y %H:%M') }}
+                                        {% else %}
+                                            <span class="text-muted">Не указан</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">Не выполнено</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Задания курса пока не добавлены.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Студенты -->
+        <div class="tab-pane fade" id="students" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <h4 class="mb-3">
+                        <i class="bi bi-people text-info"></i>
+                        Студенты курса
+                    </h4>
+                    
+                    {% if students %}
+                    <div class="row">
+                        {% for student in students %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-person-circle text-primary"></i>
+                                        {{ student.name or student.id }}
+                                    </h6>
+                                    <p class="card-text text-muted mb-0">
+                                        ID: {{ student.id }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <a href="/course/{{ course.id }}/students" class="btn btn-primary">
+                            <i class="bi bi-people"></i>
+                            Подробная статистика студентов
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Студенты курса пока не добавлены.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.timeline-content {
+    margin-left: 20px;
+}
+</style>
+{% endblock %}

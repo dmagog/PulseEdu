@@ -18,6 +18,7 @@ from app.routes.student import router as student_router
 from app.routes.teacher import router as teacher_router
 from app.routes.rop import router as rop_router
 from app.routes.llm_routes import router as llm_router
+from app.routes.course import router as course_router
 
 # Request ID context variable
 request_id_var: ContextVar[str] = ContextVar("request_id", default="")
@@ -85,5 +86,6 @@ app.include_router(student_router, tags=["student"])
 app.include_router(teacher_router, tags=["teacher"])
 app.include_router(rop_router, tags=["rop"])
 app.include_router(llm_router, tags=["llm"])
+app.include_router(course_router, tags=["course"])
 
 # Root endpoint is now handled by home_router
