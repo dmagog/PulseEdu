@@ -9,6 +9,7 @@ from typing import Any, Dict
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routes.home import router as home_router
 from app.routes.health import router as health_router
 from app.routes.admin import router as admin_router
 from app.routes.auth import router as auth_router
@@ -75,6 +76,7 @@ async def add_request_id(request: Request, call_next):
     return response
 
 # Include routers
+app.include_router(home_router, tags=["home"])
 app.include_router(health_router, tags=["health"])
 app.include_router(admin_router, tags=["admin"])
 app.include_router(auth_router, tags=["auth"])
@@ -84,11 +86,4 @@ app.include_router(teacher_router, tags=["teacher"])
 app.include_router(rop_router, tags=["rop"])
 app.include_router(llm_router, tags=["llm"])
 
-@app.get("/")
-async def root() -> Dict[str, Any]:
-    """Root endpoint with basic info."""
-    return {
-        "service": "PulseEdu",
-        "version": "0.1.0",
-        "status": "running"
-    }
+# Root endpoint is now handled by home_router
