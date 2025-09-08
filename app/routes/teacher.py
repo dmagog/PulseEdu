@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.database.session import get_session
 from app.models.student import Student, Course, Task, Attendance, TaskCompletion
 from app.services.teacher_service import TeacherService
+from app.services.cluster_service import ClusterService
 
 router = APIRouter(prefix="/teacher", tags=["teacher"])
 logger = logging.getLogger("app.teacher")
@@ -20,8 +21,9 @@ logger = logging.getLogger("app.teacher")
 # Templates
 templates = Jinja2Templates(directory="app/ui/templates")
 
-# Initialize teacher service
+# Initialize services
 teacher_service = TeacherService()
+cluster_service = ClusterService()
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -204,4 +206,53 @@ async def get_course_details_api(
         
     except Exception as e:
         logger.error(f"Error getting course details API: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/api/course/{course_id}/clusters")
+async def get_course_clusters_api(
+    course_id: int,
+    db: Session = Depends(get_session)
+) -> Dict[str, Any]:
+    """
+    API endpoint for course clusters.
+    
+    Args:
+        course_id: Course ID
+        db: Database session
+        
+    Returns:
+        JSON with course clusters
+    """
+    logger.info(f"Course clusters API requested for course: {course_id}")
+    
+    try:
+        clusters = cluster_service.get_course_clusters(course_id, db)
+        
+        # Group clusters by label
+        cluster_groups = {}
+        for cluster in clusters:
+            if cluster.cluster_label not in cluster_groups:
+                cluster_groups[cluster.cluster_label] = []
+            
+            cluster_groups[cluster.cluster_label].append({
+                "student_id": cluster.student_id,
+                "cluster_score": cluster.cluster_score,
+                "attendance_rate": cluster.attendance_rate,
+                "completion_rate": cluster.completion_rate,
+                "overall_progress": cluster.overall_progress,
+                "created_at": cluster.created_at.isoformat() if cluster.created_at else None
+            })
+        
+        return {
+            "status": "success",
+            "data": {
+                "course_id": course_id,
+                "clusters": cluster_groups,
+                "total_clusters": len(clusters)
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting course clusters API: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")

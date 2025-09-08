@@ -12,6 +12,7 @@ celery_app = Celery(
     include=[
         "worker.tasks",
         "worker.beat_tasks",
+        "worker.cluster_tasks",
     ]
 )
 
@@ -46,6 +47,10 @@ celery_app.conf.beat_schedule = {
     'daily-report': {
         'task': 'worker.beat_tasks.generate_daily_report',
         'schedule': 86400.0,  # Every 24 hours
+    },
+    'periodic-cluster-update': {
+        'task': 'worker.cluster_tasks.periodic_cluster_update',
+        'schedule': 3600.0,  # Every hour
     },
 }
 

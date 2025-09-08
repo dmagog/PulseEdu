@@ -82,6 +82,14 @@ def process_import_job(self, job_id: str):
             # Cleanup file
             import_service.cleanup_file(job.filename)
             
+            # Trigger clustering after successful import
+            try:
+                from worker.cluster_tasks import cluster_students_after_import
+                cluster_students_after_import.delay(job_id)
+                logger.info(f"Clustering task triggered for import job: {job_id}")
+            except Exception as cluster_error:
+                logger.warning(f"Failed to trigger clustering: {cluster_error}")
+            
             logger.info(f"Import job completed: {job_id} - {job.processed_rows} rows, {job.error_rows} errors")
             
     except Exception as e:

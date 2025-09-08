@@ -96,6 +96,10 @@
                                                 <strong>{{ student.student_name }}</strong>
                                                 <br>
                                                 <small class="text-muted">ID: {{ student.student_id }}</small>
+                                                <br>
+                                                <span class="badge bg-{{ 'success' if student.cluster_label == 'A' else 'warning' if student.cluster_label == 'B' else 'danger' }}" id="cluster-{{ student.student_id }}">
+                                                    Кластер {{ student.cluster_label or '?' }}
+                                                </span>
                                             </td>
                                             <td>
                                                 <div class="progress mb-1" style="height: 8px;">

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, func, desc
 
 from app.models.student import Student, Course, Task, Attendance, TaskCompletion
+from app.models.cluster import StudentCluster
 from app.services.metrics_service import MetricsService
 from app.services.config_service import config_service
 
@@ -178,13 +179,23 @@ class TeacherService:
                 if "courses" in progress:
                     course_data = next((c for c in progress["courses"] if c["course_name"] == db.query(Course).filter(Course.id == course_id).first().name), None)
                 
+                # Get cluster information
+                cluster = db.query(StudentCluster).filter(
+                    and_(
+                        StudentCluster.student_id == student.id,
+                        StudentCluster.course_id == course_id
+                    )
+                ).first()
+                
                 student_data.append({
                     "student_id": student.id,
                     "student_name": student.name or f"Студент {student.id}",
                     "attendance_rate": course_data["attendance_progress"] if course_data else 0,
                     "completion_rate": course_data["task_progress"] if course_data else 0,
                     "overall_progress": progress.get("overall_progress", 0),
-                    "status": self._get_student_status(course_data)
+                    "status": self._get_student_status(course_data),
+                    "cluster_label": cluster.cluster_label if cluster else None,
+                    "cluster_score": cluster.cluster_score if cluster else None
                 })
             
             return student_data
