@@ -8,14 +8,16 @@ from typing import Dict, Any
 from celery import Celery
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db_session
+from app.database.session import get_session
 from app.services.metrics_service import MetricsService
 from app.services.config_service import config_service
+from app.services.llm_monitoring_service import LLMMonitoringService
 
 from worker.celery_app import celery_app
 
 logger = logging.getLogger("worker.beat_tasks")
 metrics_service = MetricsService()
+llm_monitoring_service = LLMMonitoringService()
 
 
 @celery_app.task
@@ -27,30 +29,30 @@ def recalculate_all_metrics():
     logger.info("Starting periodic metrics recalculation")
     
     try:
-        with get_db_session() as db:
-            results = metrics_service.recalculate_all_students_progress(db)
-            
-            logger.info(f"Metrics recalculation completed: {results}")
-            
-            # Send email notification about metrics update
-            try:
-                from worker.email_tasks import send_metrics_update_email
-                admin_email = "admin@pulseedu.local"  # Default for now
-                update_summary = {
-                    "updated_students": results.get("total_students", 0),
-                    "updated_courses": results.get("total_courses", 0),
-                    "students_at_risk": results.get("students_at_risk", 0)
-                }
-                send_metrics_update_email.delay(admin_email, update_summary)
-                logger.info("Metrics update email triggered")
-            except Exception as email_error:
-                logger.warning(f"Failed to trigger metrics update email: {email_error}")
-            
-            return {
-                "status": "success",
-                "results": results,
-                "timestamp": config_service.now().isoformat()
+        db = next(get_session())
+        results = metrics_service.recalculate_all_students_progress(db)
+        
+        logger.info(f"Metrics recalculation completed: {results}")
+        
+        # Send email notification about metrics update
+        try:
+            from worker.email_tasks import send_metrics_update_email
+            admin_email = "admin@pulseedu.local"  # Default for now
+            update_summary = {
+                "updated_students": results.get("total_students", 0),
+                "updated_courses": results.get("total_courses", 0),
+                "students_at_risk": results.get("students_at_risk", 0)
             }
+            send_metrics_update_email.delay(admin_email, update_summary)
+            logger.info("Metrics update email triggered")
+        except Exception as email_error:
+            logger.warning(f"Failed to trigger metrics update email: {email_error}")
+        
+        return {
+            "status": "success",
+            "results": results,
+            "timestamp": config_service.now().isoformat()
+        }
             
     except Exception as e:
         logger.error(f"Error in recalculate_all_metrics: {e}")
@@ -70,12 +72,12 @@ def check_deadlines():
     logger.info("Starting deadline check")
     
     try:
-        with get_db_session() as db:
-            # Get upcoming deadlines (next 7 days)
-            upcoming_deadlines = metrics_service.get_upcoming_deadlines(7, db)
-            
-            # Get overdue tasks
-            current_time = config_service.now()
+        db = next(get_session())
+        # Get upcoming deadlines (next 7 days)
+        upcoming_deadlines = metrics_service.get_upcoming_deadlines(7, db)
+        
+        # Get overdue tasks
+        current_time = config_service.now()
             overdue_tasks = db.query(TaskCompletion).filter(
                 and_(
                     TaskCompletion.deadline.isnot(None),
@@ -136,7 +138,7 @@ def update_task_statuses():
     logger.info("Starting task status update")
     
     try:
-        with get_db_session() as db:
+        db = next(get_session())
             # Get all task completions that might need status updates
             task_completions = db.query(TaskCompletion).filter(
                 TaskCompletion.deadline.isnot(None)
@@ -182,7 +184,7 @@ def generate_daily_report():
     logger.info("Generating daily system report")
     
     try:
-        with get_db_session() as db:
+        db = next(get_session())
             # Get system metrics
             system_metrics = metrics_service.get_system_metrics(db)
             
@@ -222,3 +224,10 @@ def generate_daily_report():
 # Import required models for the tasks
 from app.models.student import TaskCompletion
 from sqlalchemy import and_
+
+
+# LLM alerts check task - temporarily disabled due to import issues
+# @celery_app.task
+# def check_llm_alerts():
+#     """Check for LLM alerts and send notifications if needed."""
+#     pass

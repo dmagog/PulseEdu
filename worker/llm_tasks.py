@@ -51,6 +51,16 @@ def generate_recommendations_task(student_id: str, course_id: str, force_refresh
             f"5. Участвуйте активно в обсуждениях и групповых заданиях"
         ]
         
+        # Log the LLM call for monitoring
+        _log_llm_call(
+            student_id=student_id,
+            course_id=course_id,
+            request_type="recommendations",
+            status="success",
+            recommendations=mock_recommendations,
+            student_data={"mock": True}
+        )
+        
         logger.info(f"Successfully generated {len(mock_recommendations)} mock recommendations for student {student_id}, course {course_id}")
         return {
             "status": "success",
