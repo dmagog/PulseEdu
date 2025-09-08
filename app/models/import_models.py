@@ -25,10 +25,10 @@ class ImportJob(SQLModel, table=True):
     created_by: Optional[str] = Field(default=None, max_length=50)
     
     # Relationships
-    errors: List["ImportError"] = Relationship(back_populates="job")
+    errors: List["ImportErrorLog"] = Relationship(back_populates="job")
 
 
-class ImportError(SQLModel, table=True):
+class ImportErrorLog(SQLModel, table=True):
     """Import error details model."""
     
     __tablename__ = "import_errors"

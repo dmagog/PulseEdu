@@ -81,7 +81,7 @@
                     <div class="card-body">
                         {% if progress.courses %}
                             {% for course in progress.courses %}
-                            <div class="card mb-3">
+                            <div class="card mb-3 course-card" data-course-id="{{ course.course_id }}" onclick="selectCourse('{{ course.course_id }}')" style="cursor: pointer;">
                                 <div class="card-body">
                                     <div class="row align-items-center">
                                         <div class="col-md-8">
@@ -113,6 +113,9 @@
 
             <!-- Activity Feed & Deadlines -->
             <div class="col-md-4">
+                <!-- LLM Recommendations -->
+                {% include 'student/recommendations.html' %}
+                
                 <!-- Upcoming Deadlines -->
                 <div class="card mb-4">
                     <div class="card-header">

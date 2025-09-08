@@ -256,3 +256,34 @@ async def get_course_clusters_api(
     except Exception as e:
         logger.error(f"Error getting course clusters API: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/recommendations", response_class=HTMLResponse)
+async def teacher_recommendations(
+    request: Request,
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    Teacher recommendations management page.
+    
+    Args:
+        request: FastAPI request object
+        db: Database session
+        
+    Returns:
+        HTML response with recommendations management page
+    """
+    logger.info("Teacher recommendations page requested")
+    
+    try:
+        return templates.TemplateResponse(
+            "teacher/recommendations.html",
+            {
+                "request": request,
+                "title": "Управление рекомендациями"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error rendering teacher recommendations page: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

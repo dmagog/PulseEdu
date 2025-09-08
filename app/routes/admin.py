@@ -14,7 +14,7 @@ from app.database.session import get_session
 from app.services.config_service import config_service
 from app.services.rbac_service import RBACService
 from app.middleware.auth import require_admin
-from app.models.import_models import ImportJob, ImportError
+from app.models.import_models import ImportJob, ImportErrorLog
 from app.models.student import Student, Course, Task, Attendance, TaskCompletion
 
 router = APIRouter(prefix="/admin", tags=["admin"])

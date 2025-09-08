@@ -11,7 +11,7 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy.orm import Session
 
-from app.models.import_models import ImportJob, ImportError
+from app.models.import_models import ImportJob, ImportErrorLog
 from app.services.config_service import config_service
 from app.services.attendance_import_service import AttendanceImportService
 from app.services.learning_import_service import LearningImportService
@@ -213,7 +213,7 @@ class ImportService:
             db: Database session
         """
         try:
-            error = ImportError(
+            error = ImportErrorLog(
                 job_id=job_id,
                 row_number=row_number,
                 column_name=column_name,

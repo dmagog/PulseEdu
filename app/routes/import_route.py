@@ -12,7 +12,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.database.session import get_session
-from app.models.import_models import ImportJob, ImportError
+from app.models.import_models import ImportJob, ImportErrorLog
 from app.services.import_service import ImportService
 from app.middleware.auth import require_import_access
 from worker.tasks import process_import_job
@@ -163,7 +163,7 @@ async def get_job_details(
         raise HTTPException(status_code=404, detail="Job not found")
     
     # Get errors
-    errors = db.query(ImportError).filter(ImportError.job_id == job_id).all()
+    errors = db.query(ImportErrorLog).filter(ImportErrorLog.job_id == job_id).all()
     
     errors_data = []
     for error in errors:

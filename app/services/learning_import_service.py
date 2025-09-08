@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlmodel import select
 
 from app.models.student import Student, Course, Task, TaskCompletion
-from app.models.import_models import ImportJob, ImportError
+from app.models.import_models import ImportJob, ImportErrorLog
 
 logger = logging.getLogger("app.learning_import")
 
@@ -239,7 +239,7 @@ class LearningImportService:
                    error_type: str, error_message: str, cell_value: str, db: Session):
         """Log import error to database."""
         try:
-            error = ImportError(
+            error = ImportErrorLog(
                 job_id=job_id,
                 row_number=row_number,
                 column_name=column_name,

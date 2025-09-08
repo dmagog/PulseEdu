@@ -9,7 +9,7 @@ from celery import Celery
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db_session
-from app.models.import_models import ImportJob, ImportError
+from app.models.import_models import ImportJob, ImportErrorLog
 from app.services.import_service import ImportService
 
 from worker.celery_app import celery_app
@@ -61,12 +61,12 @@ def process_import_job(self, job_id: str):
             job.completed_at = datetime.utcnow()
             
             # Count errors
-            error_count = db.query(ImportError).filter(ImportError.job_id == job_id).count()
+            error_count = db.query(ImportErrorLog).filter(ImportErrorLog.job_id == job_id).count()
             job.error_rows = error_count
             
             # Create errors summary
             if error_count > 0:
-                errors = db.query(ImportError).filter(ImportError.job_id == job_id).all()
+                errors = db.query(ImportErrorLog).filter(ImportErrorLog.job_id == job_id).all()
                 errors_summary = []
                 for error in errors:
                     errors_summary.append({
