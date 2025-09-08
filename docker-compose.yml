@@ -54,8 +54,8 @@ services:
       - .:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-  # Celery worker (general)
-  worker:
+  # Celery worker for data ingestion
+  worker_ingest:
     build: .
     environment:
       - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
@@ -68,7 +68,87 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
-    command: celery -A worker.celery_app worker --loglevel=info
+    command: celery -A worker.celery_app worker --loglevel=info --queues=ingest --concurrency=2 --hostname=worker_ingest@%h
+
+  # Celery worker for clustering
+  worker_cluster:
+    build: .
+    environment:
+      - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
+      - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
+      - APP_SECRET=dev-secret-key-change-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: celery -A worker.celery_app worker --loglevel=info --queues=cluster --concurrency=1 --hostname=worker_cluster@%h
+
+  # Celery worker for beat tasks (periodic)
+  worker_beat:
+    build: .
+    environment:
+      - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
+      - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
+      - APP_SECRET=dev-secret-key-change-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: celery -A worker.celery_app worker --loglevel=info --queues=beat --concurrency=1 --hostname=worker_beat@%h
+
+  # Celery worker for auth tasks (future)
+  worker_auth:
+    build: .
+    environment:
+      - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
+      - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
+      - APP_SECRET=dev-secret-key-change-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: celery -A worker.celery_app worker --loglevel=info --queues=auth --concurrency=1 --hostname=worker_auth@%h
+
+  # Celery worker for email tasks (future)
+  worker_email:
+    build: .
+    environment:
+      - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
+      - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
+      - APP_SECRET=dev-secret-key-change-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: celery -A worker.celery_app worker --loglevel=info --queues=email --concurrency=1 --hostname=worker_email@%h
+
+  # Celery worker for LLM tasks (future)
+  worker_llm:
+    build: .
+    environment:
+      - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
+      - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
+      - APP_SECRET=dev-secret-key-change-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: celery -A worker.celery_app worker --loglevel=info --queues=llm --concurrency=1 --hostname=worker_llm@%h
 
   # Celery Beat scheduler
   beat:

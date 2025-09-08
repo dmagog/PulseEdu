@@ -28,6 +28,14 @@ celery_app.conf.update(
     task_soft_time_limit=25 * 60,  # 25 minutes
     worker_prefetch_multiplier=1,
     worker_max_tasks_per_child=1000,
+    # Enhanced logging
+    worker_log_format='[%(asctime)s: %(levelname)s/%(processName)s] %(message)s',
+    worker_task_log_format='[%(asctime)s: %(levelname)s/%(processName)s] %(task_name)s[%(task_id)s]: %(message)s',
+    task_annotations={
+        '*': {
+            'rate_limit': '100/m',  # Rate limiting
+        }
+    }
 )
 
 # Beat schedule (for periodic tasks)
@@ -56,11 +64,18 @@ celery_app.conf.beat_schedule = {
 
 # Queue configuration
 celery_app.conf.task_routes = {
-    # TODO: Add queue routing in future iterations
-    # Example:
-    # "worker.tasks.auth.*": {"queue": "auth"},
-    # "worker.tasks.ingest.*": {"queue": "ingest"},
-    # "worker.tasks.email.*": {"queue": "email"},
-    # "worker.tasks.llm.*": {"queue": "llm"},
-    # "worker.tasks.cluster.*": {"queue": "cluster"},
+    # Import and data processing tasks
+    'worker.tasks.process_import_job': {'queue': 'ingest'},
+    'worker.tasks.*': {'queue': 'ingest'},
+    
+    # Clustering tasks
+    'worker.cluster_tasks.*': {'queue': 'cluster'},
+    
+    # Beat tasks (periodic)
+    'worker.beat_tasks.*': {'queue': 'beat'},
+    
+    # Future tasks
+    'worker.auth_tasks.*': {'queue': 'auth'},
+    'worker.email_tasks.*': {'queue': 'email'},
+    'worker.llm_tasks.*': {'queue': 'llm'},
 }
