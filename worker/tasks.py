@@ -90,10 +90,29 @@ def process_import_job(self, job_id: str):
             except Exception as cluster_error:
                 logger.warning(f"Failed to trigger clustering: {cluster_error}")
             
+            # Send email notification about successful import
+            try:
+                from worker.email_tasks import send_import_completion_email
+                # TODO: Get user email from job or user context
+                user_email = "admin@pulseedu.local"  # Default for now
+                send_import_completion_email.delay(job_id, user_email)
+                logger.info(f"Import completion email triggered for job: {job_id}")
+            except Exception as email_error:
+                logger.warning(f"Failed to trigger import completion email: {email_error}")
+            
             logger.info(f"Import job completed: {job_id} - {job.processed_rows} rows, {job.error_rows} errors")
             
     except Exception as e:
         logger.error(f"Import job failed: {job_id} - {e}")
+        
+        # Send email notification about import error
+        try:
+            from worker.email_tasks import send_import_error_email
+            user_email = "admin@pulseedu.local"  # Default for now
+            send_import_error_email.delay(job_id, user_email, str(e))
+            logger.info(f"Import error email triggered for job: {job_id}")
+        except Exception as email_error:
+            logger.warning(f"Failed to trigger import error email: {email_error}")
         
         # Update job status to failed
         try:

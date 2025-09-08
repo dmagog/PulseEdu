@@ -13,6 +13,7 @@ celery_app = Celery(
         "worker.tasks",
         "worker.beat_tasks",
         "worker.cluster_tasks",
+        "worker.email_tasks",
     ]
 )
 
@@ -76,6 +77,6 @@ celery_app.conf.task_routes = {
     
     # Future tasks
     'worker.auth_tasks.*': {'queue': 'auth'},
-    'worker.email_tasks.*': {'queue': 'email'},
+    'email.*': {'queue': 'email'},
     'worker.llm_tasks.*': {'queue': 'llm'},
 }

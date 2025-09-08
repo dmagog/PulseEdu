@@ -44,7 +44,15 @@ services:
       - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
       - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
       - APP_SECRET=dev-secret-key-change-in-production
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - FROM_EMAIL=noreply@pulseedu.local
+      - FROM_NAME=Pulse.EDU
       - APP_BASE_URL=http://localhost:8000
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - FROM_EMAIL=noreply@pulseedu.local
+      - FROM_NAME=Pulse.EDU
     depends_on:
       db:
         condition: service_healthy
@@ -61,6 +69,10 @@ services:
       - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
       - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
       - APP_SECRET=dev-secret-key-change-in-production
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - FROM_EMAIL=noreply@pulseedu.local
+      - FROM_NAME=Pulse.EDU
     depends_on:
       db:
         condition: service_healthy
@@ -77,6 +89,10 @@ services:
       - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
       - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
       - APP_SECRET=dev-secret-key-change-in-production
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - FROM_EMAIL=noreply@pulseedu.local
+      - FROM_NAME=Pulse.EDU
     depends_on:
       db:
         condition: service_healthy
@@ -93,6 +109,10 @@ services:
       - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
       - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
       - APP_SECRET=dev-secret-key-change-in-production
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - FROM_EMAIL=noreply@pulseedu.local
+      - FROM_NAME=Pulse.EDU
     depends_on:
       db:
         condition: service_healthy
@@ -109,6 +129,10 @@ services:
       - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
       - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
       - APP_SECRET=dev-secret-key-change-in-production
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - FROM_EMAIL=noreply@pulseedu.local
+      - FROM_NAME=Pulse.EDU
     depends_on:
       db:
         condition: service_healthy
@@ -125,6 +149,10 @@ services:
       - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
       - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
       - APP_SECRET=dev-secret-key-change-in-production
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - FROM_EMAIL=noreply@pulseedu.local
+      - FROM_NAME=Pulse.EDU
     depends_on:
       db:
         condition: service_healthy
@@ -141,6 +169,10 @@ services:
       - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
       - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
       - APP_SECRET=dev-secret-key-change-in-production
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - FROM_EMAIL=noreply@pulseedu.local
+      - FROM_NAME=Pulse.EDU
     depends_on:
       db:
         condition: service_healthy
@@ -157,6 +189,10 @@ services:
       - DB_URL=postgresql://pulseedu:pulseedu@db:5432/pulseedu
       - RABBITMQ_URL=amqp://pulseedu:pulseedu@mq:5672//
       - APP_SECRET=dev-secret-key-change-in-production
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - FROM_EMAIL=noreply@pulseedu.local
+      - FROM_NAME=Pulse.EDU
     depends_on:
       db:
         condition: service_healthy
@@ -188,8 +224,7 @@ services:
       - "1025:1025"  # SMTP
       - "8025:8025"  # Web UI
     environment:
-      - MH_STORAGE=maildir
-      - MH_MAILDIR_PATH=/maildir
+      - MH_STORAGE=memory
 
 volumes:
   postgres_data:

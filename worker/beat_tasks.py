@@ -32,6 +32,20 @@ def recalculate_all_metrics():
             
             logger.info(f"Metrics recalculation completed: {results}")
             
+            # Send email notification about metrics update
+            try:
+                from worker.email_tasks import send_metrics_update_email
+                admin_email = "admin@pulseedu.local"  # Default for now
+                update_summary = {
+                    "updated_students": results.get("total_students", 0),
+                    "updated_courses": results.get("total_courses", 0),
+                    "students_at_risk": results.get("students_at_risk", 0)
+                }
+                send_metrics_update_email.delay(admin_email, update_summary)
+                logger.info("Metrics update email triggered")
+            except Exception as email_error:
+                logger.warning(f"Failed to trigger metrics update email: {email_error}")
+            
             return {
                 "status": "success",
                 "results": results,
@@ -79,6 +93,22 @@ def check_deadlines():
                     logger.warning(f"Critical deadline: Student {deadline['student_id']}, "
                                  f"Task: {deadline['task_name']}, "
                                  f"Due: {deadline['deadline']}")
+            
+            # Send email notifications for critical deadlines
+            if critical_deadlines:
+                try:
+                    from worker.email_tasks import send_deadline_reminder_email
+                    for deadline in critical_deadlines[:5]:  # Limit to 5 notifications per run
+                        student_email = f"student{deadline.get('student_id', 'unknown')}@pulseedu.local"
+                        send_deadline_reminder_email.delay(
+                            student_email,
+                            deadline.get('task_name', 'Задание'),
+                            deadline.get('deadline', 'не указан'),
+                            deadline.get('course_name', 'Курс')
+                        )
+                    logger.info(f"Deadline reminder emails triggered for {len(critical_deadlines[:5])} students")
+                except Exception as email_error:
+                    logger.warning(f"Failed to trigger deadline reminder emails: {email_error}")
             
             return {
                 "status": "success",
