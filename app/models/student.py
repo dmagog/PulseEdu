@@ -14,6 +14,7 @@ class Student(SQLModel, table=True):
     id: str = Field(primary_key=True, max_length=20)  # id_01, id_02, etc.
     name: Optional[str] = Field(default=None, max_length=255)
     email: Optional[str] = Field(default=None, max_length=255)
+    group_id: Optional[str] = Field(default=None, max_length=50)  # Группа студента
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
