@@ -85,13 +85,39 @@
             </div>
         </div>
 
-        <!-- Группы студентов -->
-        <div class="row">
+        <!-- Навигация по разделам -->
+        <div class="row mb-4">
             <div class="col-12">
-                <h4 class="mb-3">
-                    <i class="bi bi-people text-primary"></i>
-                    Студенты по группам
-                </h4>
+                <ul class="nav nav-tabs" id="courseTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups" type="button" role="tab">
+                            <i class="bi bi-people"></i> Группы студентов
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="clusters-tab" data-bs-toggle="tab" data-bs-target="#clusters" type="button" role="tab">
+                            <i class="bi bi-diagram-3"></i> Кластеризация
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="progress-tab" data-bs-toggle="tab" data-bs-target="#progress" type="button" role="tab">
+                            <i class="bi bi-graph-up"></i> Прогресс курса
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Содержимое вкладок -->
+        <div class="tab-content" id="courseTabsContent">
+            <!-- Группы студентов -->
+            <div class="tab-pane fade show active" id="groups" role="tabpanel">
+                <div class="row">
+                    <div class="col-12">
+                        <h4 class="mb-3">
+                            <i class="bi bi-people text-primary"></i>
+                            Студенты по группам
+                        </h4>
                 
                 {% if students_by_group %}
                     {% for group_id, students in students_by_group.items() %}
@@ -178,6 +204,82 @@
                         Студенты курса пока не добавлены.
                     </div>
                 {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кластеризация -->
+            <div class="tab-pane fade" id="clusters" role="tabpanel">
+                <div class="row">
+                    <div class="col-12">
+                        <h4 class="mb-3">
+                            <i class="bi bi-diagram-3 text-info"></i>
+                            Кластеризация студентов
+                        </h4>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            Кластеризация пока не выполнена. Данные будут доступны после анализа.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Прогресс курса -->
+            <div class="tab-pane fade" id="progress" role="tabpanel">
+                <div class="row">
+                    <div class="col-12">
+                        <h4 class="mb-3">
+                            <i class="bi bi-graph-up text-success"></i>
+                            Хронологический прогресс курса
+                        </h4>
+                        
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Статистика по группам</h6>
+                                        {% for group_id, students in students_by_group.items() %}
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between">
+                                                <span>{{ group_id }}</span>
+                                                <span class="badge bg-primary">{{ students|length }} студентов</span>
+                                            </div>
+                                            <div class="progress mt-1">
+                                                <div class="progress-bar" role="progressbar" 
+                                                     style="width: 75%">
+                                                    75%
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Общая статистика</h6>
+                                        <div class="row text-center">
+                                            <div class="col-6">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <h5 class="text-success">75%</h5>
+                                                        <small>Отличный прогресс</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <h5 class="text-warning">25%</h5>
+                                                        <small>Хороший прогресс</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

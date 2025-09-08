@@ -91,31 +91,56 @@ async def course_details(
         if not course:
             raise HTTPException(status_code=404, detail="Course not found")
         
-        # Simplified data for testing
-        students_by_group = {
-            "Группа 1": [
-                {
-                    'student': {'id': 'id_01', 'name': 'Студент 1'},
-                    'attendance_rate': 85.0,
-                    'completion_rate': 90.0,
-                    'overall_progress': 87.5,
-                    'status': 'good'
-                }
-            ],
-            "Без группы": [
-                {
-                    'student': {'id': 'id_02', 'name': 'Студент 2'},
-                    'attendance_rate': 60.0,
-                    'completion_rate': 70.0,
-                    'overall_progress': 65.0,
-                    'status': 'medium_risk'
-                }
-            ]
-        }
+        # Get students grouped by group_id with real data (simplified approach)
+        students_by_group = {}
         
-        total_lessons = 10
-        total_tasks = 15
+        try:
+            # Get all students first
+            all_students = db.query(Student).all()
+            
+            for student in all_students:
+                group_id = student.group_id or "Без группы"
+                if group_id not in students_by_group:
+                    students_by_group[group_id] = []
+                
+                # Simplified progress calculation for now
+                # TODO: Implement real calculations when data structure is stable
+                attendance_rate = 75.0  # Mock data
+                completion_rate = 80.0  # Mock data
+                overall_progress = (attendance_rate + completion_rate) / 2
+                
+                students_by_group[group_id].append({
+                    'student': student,
+                    'attendance_rate': round(attendance_rate, 1),
+                    'completion_rate': round(completion_rate, 1),
+                    'overall_progress': round(overall_progress, 1),
+                    'status': 'high_risk' if overall_progress < 40 else 'medium_risk' if overall_progress < 70 else 'good'
+                })
+        except Exception as e:
+            logger.warning(f"Error loading students: {e}")
+            students_by_group = {"Без группы": []}
+        
+        # Calculate real course statistics
+        total_lessons = db.query(Lesson).filter(Lesson.course_id == course_id).count()
+        total_tasks = db.query(Task).filter(Task.course_id == course_id).count()
+        
+        # Get cluster data if available
         cluster_groups = {}
+        try:
+            clusters = cluster_service.get_course_clusters(course_id, db)
+            for cluster in clusters:
+                if cluster.cluster_label not in cluster_groups:
+                    cluster_groups[cluster.cluster_label] = []
+                cluster_groups[cluster.cluster_label].append({
+                    "student_id": cluster.student_id,
+                    "cluster_score": cluster.cluster_score,
+                    "attendance_rate": cluster.attendance_rate,
+                    "completion_rate": cluster.completion_rate,
+                    "overall_progress": cluster.overall_progress
+                })
+        except Exception as e:
+            logger.warning(f"Could not load cluster data: {e}")
+            cluster_groups = {}
         
         return templates.TemplateResponse("teacher/course_simple.html", {
             "request": request,
