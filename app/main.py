@@ -43,7 +43,7 @@ root_logger.addFilter(RequestIDFilter())
 app = FastAPI(
     title="PulseEdu",
     description="Educational analytics and recommendation system",
-    version="0.1.0"
+    version="0.1.1"
 )
 
 # Add CORS middleware
