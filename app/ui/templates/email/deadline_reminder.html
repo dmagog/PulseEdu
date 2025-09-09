@@ -1,0 +1,28 @@
+{% extends "email/base.html" %}
+
+{% block title %}Напоминание о дедлайне - Pulse.EDU{% endblock %}
+
+{% block content %}
+<h2>⏰ Напоминание о дедлайне</h2>
+
+<div class="alert alert-warning">
+    <strong>Внимание!</strong> Приближается дедлайн выполнения задания.
+</div>
+
+<h3>Детали задания:</h3>
+<ul>
+    <li><strong>Название:</strong> {{ task_name }}</li>
+    <li><strong>Курс:</strong> {{ course_name }}</li>
+    <li><strong>Дедлайн:</strong> {{ deadline }}</li>
+</ul>
+
+<h3>Что нужно сделать?</h3>
+<p>Убедитесь, что вы выполнили задание и отправили его на проверку до указанного срока.</p>
+
+<a href="{{ app_base_url or 'http://localhost:8000' }}/student" class="button">
+    Перейти к заданиям
+</a>
+
+<p><small>Это автоматическое напоминание от системы Pulse.EDU</small></p>
+{% endblock %}
+

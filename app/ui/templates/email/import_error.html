@@ -1,0 +1,32 @@
+{% extends "email/base.html" %}
+
+{% block title %}Ошибка импорта данных - Pulse.EDU{% endblock %}
+
+{% block content %}
+<h2>❌ Ошибка при импорте данных</h2>
+
+<div class="alert alert-error">
+    <strong>Импорт данных завершился с ошибкой!</strong><br>
+    ID задачи: <code>{{ job_id }}</code>
+</div>
+
+<h3>Описание ошибки:</h3>
+<div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; border-left: 4px solid #dc3545;">
+    <code>{{ error_message }}</code>
+</div>
+
+<h3>Что делать?</h3>
+<ol>
+    <li>Проверьте формат загружаемого файла</li>
+    <li>Убедитесь, что файл не повреждён</li>
+    <li>Проверьте соответствие структуры файла ожидаемому формату</li>
+    <li>Обратитесь к администратору системы, если проблема повторяется</li>
+</ol>
+
+<a href="{{ app_base_url or 'http://localhost:8000' }}/import" class="button">
+    Попробовать импорт снова
+</a>
+
+<p><small>Время ошибки: {{ error_time or 'не указано' }}</small></p>
+{% endblock %}
+

@@ -22,7 +22,7 @@ async def health_check() -> Dict[str, Any]:
     return {
         "status": "ok",
         "service": "PulseEdu",
-        "version": "0.1.0"
+        "version": "0.1.1"
     }
 
 @router.get("/health")
@@ -41,7 +41,7 @@ async def detailed_health() -> Dict[str, Any]:
     return {
         "status": "ok",
         "service": "PulseEdu",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "components": {
             "database": "not_implemented",
             "message_broker": "not_implemented",

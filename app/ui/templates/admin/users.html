@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-people text-primary"></i>
+                    {{ title }}
+                </h1>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="bi bi-person-plus"></i> Добавить пользователя
+                    </button>
+                </div>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                Ошибка загрузки данных: {{ error }}
+            </div>
+            {% endif %}
+
+            <!-- Статистика -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ users|length }}</h4>
+                                    <p class="card-text">Всего пользователей</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-people fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ users|selectattr('is_active', 'equalto', true)|list|length }}</h4>
+                                    <p class="card-text">Активных</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-person-check fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ users|selectattr('is_active', 'equalto', false)|list|length }}</h4>
+                                    <p class="card-text">Неактивных</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-person-x fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">{{ roles|length }}</h4>
+                                    <p class="card-text">Ролей в системе</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="bi bi-shield-check fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Таблица пользователей -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-table"></i>
+                        Список пользователей
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if users %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Логин</th>
+                                    <th>Email</th>
+                                    <th>Имя</th>
+                                    <th>Роли</th>
+                                    <th>Статус</th>
+                                    <th>Создан</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>
+                                        <code>{{ user.user_id }}</code>
+                                    </td>
+                                    <td>
+                                        <strong>{{ user.login }}</strong>
+                                    </td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.display_name or 'Не указано' }}</td>
+                                    <td>
+                                        {% set user_role_list = user_roles.get(user.user_id, []) %}
+                                        {% if user_role_list %}
+                                            {% for role in user_role_list %}
+                                                <span class="badge bg-secondary me-1">{{ role }}</span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">Нет ролей</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.is_active %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Активен
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-x-circle"></i> Неактивен
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ user.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary" 
+                                                    onclick="editUser('{{ user.user_id }}')"
+                                                    title="Редактировать">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-outline-info" 
+                                                    onclick="manageRoles('{{ user.user_id }}')"
+                                                    title="Управление ролями">
+                                                <i class="bi bi-shield-check"></i>
+                                            </button>
+                                            {% if user.is_active %}
+                                                <button class="btn btn-outline-warning" 
+                                                        onclick="toggleUserStatus('{{ user.user_id }}', false)"
+                                                        title="Деактивировать">
+                                                    <i class="bi bi-person-x"></i>
+                                                </button>
+                                            {% else %}
+                                                <button class="btn btn-outline-success" 
+                                                        onclick="toggleUserStatus('{{ user.user_id }}', true)"
+                                                        title="Активировать">
+                                                    <i class="bi bi-person-check"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-people fs-1 text-muted"></i>
+                        <h5 class="text-muted mt-3">Пользователи не найдены</h5>
+                        <p class="text-muted">В системе пока нет пользователей</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                            <i class="bi bi-person-plus"></i> Добавить первого пользователя
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Список ролей -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-shield-check"></i>
+                        Роли в системе
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if roles %}
+                    <div class="row">
+                        {% for role in roles %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ role.name }}</h6>
+                                    <p class="card-text text-muted">{{ role.description or 'Нет описания' }}</p>
+                                    <small class="text-muted">
+                                        ID: <code>{{ role.role_id }}</code>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-shield-x fs-1 text-muted"></i>
+                        <p class="text-muted mt-2">Роли не настроены</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления пользователя -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus"></i>
+                    Добавить пользователя
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="/admin/users/add">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label">ID пользователя</label>
+                        <input type="text" class="form-control" id="user_id" name="user_id" required>
+                        <div class="form-text">Уникальный идентификатор пользователя</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="login" class="form-label">Логин</label>
+                        <input type="text" class="form-control" id="login" name="login" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="display_name" class="form-label">Отображаемое имя</label>
+                        <input type="text" class="form-control" id="display_name" name="display_name">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">
+                                Активный пользователь
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить пользователя</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editUser(userId) {
+    // TODO: Реализовать редактирование пользователя
+    alert('Редактирование пользователя: ' + userId);
+}
+
+function manageRoles(userId) {
+    // TODO: Реализовать управление ролями
+    alert('Управление ролями для пользователя: ' + userId);
+}
+
+function toggleUserStatus(userId, isActive) {
+    if (confirm(isActive ? 'Активировать пользователя?' : 'Деактивировать пользователя?')) {
+        // TODO: Реализовать изменение статуса
+        alert('Изменение статуса пользователя: ' + userId + ' на ' + (isActive ? 'активный' : 'неактивный'));
+    }
+}
+</script>
+{% endblock %}
