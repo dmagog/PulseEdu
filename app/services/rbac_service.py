@@ -19,19 +19,46 @@ class RBACService:
         "admin": {
             "admin.settings": ["read", "write"],
             "admin.metrics": ["read"],
+            "admin.users": ["read", "write"],
+            "admin.staff": ["read", "write"],
+            "admin.students": ["read", "write"],
+            "admin.courses": ["read", "write"],
             "import.upload": ["read", "write"],
             "import.jobs": ["read", "write"],
             "student.view": ["read"],
-            "system.manage": ["read", "write"]
+            "teacher.view": ["read"],
+            "rop.view": ["read"],
+            "system.manage": ["read", "write"],
+            "system.status": ["read"]
         },
         "operator": {
             "import.upload": ["read", "write"],
             "import.jobs": ["read", "write"],
             "student.view": ["read"]
         },
+        "teacher": {
+            "teacher.view": ["read"],
+            "teacher.courses": ["read", "write"],
+            "teacher.students": ["read"],
+            "teacher.analytics": ["read"],
+            "teacher.schedule": ["read", "write"],
+            "student.view": ["read"]
+        },
+        "rop": {
+            "rop.view": ["read"],
+            "rop.programs": ["read", "write"],
+            "rop.trends": ["read"],
+            "rop.quality": ["read", "write"],
+            "teacher.view": ["read"],
+            "student.view": ["read"]
+        },
         "student": {
             "student.view": ["read"],
-            "student.courses": ["read"]
+            "student.courses": ["read"],
+            "student.progress": ["read"],
+            "student.assignments": ["read"],
+            "student.schedule": ["read"],
+            "student.recommendations": ["read"]
         }
     }
     

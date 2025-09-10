@@ -6,14 +6,25 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.database.session import get_session
 from app.models.user import User, Role, UserRole, UserAuthLog
+from app.services.session_service import session_service
+from worker.auth_tasks import (
+    log_auth_attempt_task,
+    create_user_session_task,
+    destroy_user_session_task,
+    assign_default_role_task
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger("app.auth")
+
+# Templates
+templates = Jinja2Templates(directory="app/ui/templates")
 
 
 def log_auth_attempt(
@@ -25,7 +36,7 @@ def log_auth_attempt(
     reason: Optional[str] = None
 ) -> None:
     """
-    Log authentication attempt for audit.
+    Log authentication attempt for audit using Celery worker.
     
     Args:
         db: Database session
@@ -36,23 +47,37 @@ def log_auth_attempt(
         reason: Failure reason if failed
     """
     try:
-        auth_log = UserAuthLog(
+        # Send task to auth worker
+        log_auth_attempt_task.delay(
             login=login,
             outcome=outcome,
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
-            reason=reason,
-            user_id=user_id
+            user_id=user_id,
+            reason=reason
         )
-        db.add(auth_log)
-        db.commit()
-        logger.info(f"Auth log recorded: {login} - {outcome}")
+        logger.info(f"Auth log task queued: {login} - {outcome}")
     except Exception as e:
-        logger.error(f"Failed to log auth attempt: {e}")
+        logger.error(f"Failed to queue auth log task: {e}")
+        # Fallback to direct logging if worker is unavailable
         try:
-            db.rollback()
-        except:
-            pass
+            auth_log = UserAuthLog(
+                login=login,
+                outcome=outcome,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                reason=reason,
+                user_id=user_id
+            )
+            db.add(auth_log)
+            db.commit()
+            logger.info(f"Auth log recorded directly: {login} - {outcome}")
+        except Exception as fallback_e:
+            logger.error(f"Failed to log auth attempt directly: {fallback_e}")
+            try:
+                db.rollback()
+            except:
+                pass
 
 
 def get_or_create_user(db: Session, login: str, email: Optional[str] = None) -> User:
@@ -86,15 +111,22 @@ def get_or_create_user(db: Session, login: str, email: Optional[str] = None) -> 
         db.commit()
         db.refresh(user)
         
-        # Assign default role (student)
-        default_role = db.query(Role).filter(Role.name == "student").first()
-        if default_role:
-            user_role = UserRole(
-                user_id=user.user_id,
-                role_id=default_role.role_id
-            )
-            db.add(user_role)
-            db.commit()
+        # Assign default role (student) using worker
+        try:
+            assign_default_role_task.delay(user.user_id, "student")
+            logger.info(f"Default role assignment queued for user {login}")
+        except Exception as e:
+            logger.error(f"Failed to queue role assignment: {e}")
+            # Fallback to direct assignment
+            default_role = db.query(Role).filter(Role.role_name == "student").first()
+            if default_role:
+                user_role = UserRole(
+                    user_id=user.user_id,
+                    role_id=default_role.role_id
+                )
+                db.add(user_role)
+                db.commit()
+                logger.info(f"Default role assigned directly to user {login}")
         
         logger.info(f"Created new user: {login}")
     
@@ -107,7 +139,7 @@ async def verify_auth(
     login: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_session)
-) -> Dict[str, Any]:
+) -> RedirectResponse:
     """
     Verify authentication (fake implementation).
     
@@ -128,19 +160,21 @@ async def verify_auth(
         # Log successful authentication
         log_auth_attempt(db, login, "success", request, user_id=user.user_id)
         
-        # In a real implementation, you would set a secure session cookie here
-        # For now, we'll just return success
+        # Create session
+        session_token = session_service.create_session(user)
         
-        return {
-            "status": "success",
-            "message": "Authentication successful",
-            "user": {
-                "user_id": user.user_id,
-                "login": user.login,
-                "email": user.email,
-                "display_name": user.display_name
-            }
-        }
+        # Create response with session cookie
+        response = RedirectResponse(url="/", status_code=303)
+        response.set_cookie(
+            key="session_token",
+            value=session_token,
+            max_age=24*60*60,  # 24 hours
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax"
+        )
+        
+        return response
         
     except HTTPException:
         raise
@@ -150,48 +184,67 @@ async def verify_auth(
         raise HTTPException(status_code=500, detail="Authentication failed")
 
 
+@router.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request) -> HTMLResponse:
+    """
+    Beautiful login page.
+    """
+    return templates.TemplateResponse("auth/login.html", {
+        "request": request,
+        "title": "Вход в систему"
+    })
+
+
 @router.get("/verify")
 async def auth_form() -> str:
     """
-    Simple authentication form (for testing).
+    Simple authentication form (for testing) - redirect to new login page.
     """
     return """
     <!DOCTYPE html>
     <html>
     <head>
         <title>PulseEdu - Авторизация</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <meta http-equiv="refresh" content="0; url=/auth/login">
     </head>
     <body>
-        <div class="container mt-5">
-            <div class="row justify-content-center">
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>Вход в систему</h4>
-                        </div>
-                        <div class="card-body">
-                            <form method="post" action="/auth/verify">
-                                <div class="mb-3">
-                                    <label for="login" class="form-label">Логин</label>
-                                    <input type="text" class="form-control" id="login" name="login" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">Пароль</label>
-                                    <input type="password" class="form-control" id="password" name="password" required>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100">Войти</button>
-                            </form>
-                            <div class="mt-3">
-                                <small class="text-muted">
-                                    <strong>Тестовый режим:</strong> любой логин и пароль будут приняты
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <p>Перенаправление на страницу входа...</p>
+        <script>window.location.href = '/auth/login';</script>
     </body>
     </html>
     """
+
+
+@router.post("/logout")
+async def logout(request: Request) -> RedirectResponse:
+    """
+    Logout user and destroy session.
+    """
+    try:
+        # Get session token from cookie
+        session_token = request.cookies.get("session_token")
+        
+        if session_token:
+            # Get user info before destroying session
+            session_data = session_service.get_session(session_token)
+            user_id = session_data.get("user_id") if session_data else None
+            
+            # Destroy session using worker
+            try:
+                destroy_user_session_task.delay(session_token, user_id)
+                logger.info(f"Session destruction queued for user {user_id}")
+            except Exception as e:
+                logger.error(f"Failed to queue session destruction: {e}")
+                # Fallback to direct destruction
+                session_service.destroy_session(session_token)
+                logger.info(f"Session destroyed directly for user {user_id}")
+        
+        # Create response and clear cookie
+        response = RedirectResponse(url="/auth/login", status_code=303)
+        response.delete_cookie("session_token")
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error during logout: {e}")
+        return RedirectResponse(url="/auth/login", status_code=303)

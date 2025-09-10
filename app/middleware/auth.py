@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_session
 from app.services.rbac_service import RBACService
+from app.services.session_service import session_service
 
 logger = logging.getLogger("app.auth_middleware")
 
@@ -124,7 +125,7 @@ class AuthMiddleware:
     
     def _get_user_id_from_request(self, request: Request) -> Optional[str]:
         """
-        Extract user ID from request (simplified implementation).
+        Extract user ID from request using session.
         
         Args:
             request: FastAPI request object
@@ -132,23 +133,22 @@ class AuthMiddleware:
         Returns:
             User ID or None
         """
-        # For now, we'll use a simple approach with query parameters
-        # In a real application, this would check session/cookies/JWT tokens
-        
-        # Check query parameter
-        user_id = request.query_params.get("user_id")
-        if user_id:
-            return user_id
-        
-        # Check if it's a student route with student_id
-        if "/student/" in str(request.url):
-            student_id = request.query_params.get("student_id")
-            if student_id:
-                return student_id
-        
-        # Default to admin user for testing
-        # In real app, this would be extracted from authentication
-        return "admin_user"
+        try:
+            # Get session token from cookie
+            session_token = request.cookies.get("session_token")
+            if not session_token:
+                return None
+            
+            # Get session data
+            session_data = session_service.get_session(session_token)
+            if not session_data:
+                return None
+            
+            return session_data.get("user_id")
+            
+        except Exception as e:
+            self.logger.error(f"Error getting user ID from request: {e}")
+            return None
     
     def _redirect_to_login(self, request: Request) -> RedirectResponse:
         """Redirect to login page."""
@@ -163,35 +163,32 @@ class AuthMiddleware:
 auth_middleware = AuthMiddleware()
 
 
-# Simplified permission decorators
+# Real permission decorators
 def require_admin(func: Callable):
-    """Require admin role - simplified version."""
-    async def wrapper(*args, **kwargs):
-        # For now, just call the function without permission checks
-        # In a real system, this would check authentication and roles
-        return await func(*args, **kwargs)
-    return wrapper
+    """Require admin role."""
+    return auth_middleware.require_permission("system.manage", "write")(func)
 
 
 def require_operator(func: Callable):
-    """Require operator role - simplified version."""
-    async def wrapper(*args, **kwargs):
-        # For now, just call the function without permission checks
-        return await func(*args, **kwargs)
-    return wrapper
+    """Require operator role."""
+    return auth_middleware.require_permission("import.upload", "write")(func)
 
 
 def require_student_access(func: Callable):
-    """Require student access - simplified version."""
-    async def wrapper(*args, **kwargs):
-        # For now, just call the function without permission checks
-        return await func(*args, **kwargs)
-    return wrapper
+    """Require student access."""
+    return auth_middleware.require_permission("student.view", "read")(func)
+
+
+def require_teacher_access(func: Callable):
+    """Require teacher access."""
+    return auth_middleware.require_permission("teacher.view", "read")(func)
+
+
+def require_rop_access(func: Callable):
+    """Require ROP access."""
+    return auth_middleware.require_permission("rop.view", "read")(func)
 
 
 def require_import_access(func: Callable):
-    """Require import access - simplified version."""
-    async def wrapper(*args, **kwargs):
-        # For now, just call the function without permission checks
-        return await func(*args, **kwargs)
-    return wrapper
+    """Require import access."""
+    return auth_middleware.require_permission("import.upload", "write")(func)

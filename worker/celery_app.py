@@ -15,6 +15,7 @@ celery_app = Celery(
         "worker.cluster_tasks",
         "worker.email_tasks",
         "worker.llm_tasks",
+        "worker.auth_tasks",
     ]
 )
 
@@ -61,6 +62,10 @@ celery_app.conf.beat_schedule = {
     'periodic-cluster-update': {
         'task': 'worker.cluster_tasks.periodic_cluster_update',
         'schedule': 3600.0,  # Every hour
+    },
+    'cleanup-expired-sessions': {
+        'task': 'worker.auth_tasks.cleanup_expired_sessions',
+        'schedule': 1800.0,  # Every 30 minutes
     },
 }
 
