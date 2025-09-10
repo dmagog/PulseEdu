@@ -8,13 +8,13 @@ from typing import Dict, Any, List, Optional
 
 from celery import Celery
 from app.database.session import get_session
-from app.services.llm_provider import LLMProvider
+# from app.services.llm_provider import LLMProvider
 from app.services.student_service import StudentService
 from app.services.metrics_service import MetricsService
 from worker.celery_app import celery_app
 
 logger = logging.getLogger("worker.llm_tasks")
-llm_provider = LLMProvider()
+# llm_provider = LLMProvider()
 student_service = StudentService()
 metrics_service = MetricsService()
 
@@ -240,9 +240,9 @@ def _log_llm_call(student_id: str, course_id: str, request_type: str,
             error_message=error_message,
             recommendations_count=len(recommendations) if recommendations else None,
             response_preview=recommendations[0][:200] if recommendations and len(recommendations) > 0 else None,
-            model_used=llm_provider.model,
-            temperature=llm_provider.temperature,
-            max_tokens=llm_provider.max_tokens
+            model_used="mock",
+            temperature=0.7,
+            max_tokens=1000
         )
         
         db.add(log_entry)

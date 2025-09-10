@@ -78,47 +78,47 @@ def check_deadlines():
         
         # Get overdue tasks
         current_time = config_service.now()
-            overdue_tasks = db.query(TaskCompletion).filter(
-                and_(
-                    TaskCompletion.deadline.isnot(None),
-                    TaskCompletion.deadline < current_time,
-                    TaskCompletion.status != "Выполнено"
-                )
-            ).count()
-            
-            # Log critical deadlines (due within 24 hours)
-            critical_deadlines = [d for d in upcoming_deadlines if d["days_left"] <= 1]
-            
-            if critical_deadlines:
-                logger.warning(f"Found {len(critical_deadlines)} critical deadlines")
-                for deadline in critical_deadlines:
-                    logger.warning(f"Critical deadline: Student {deadline['student_id']}, "
-                                 f"Task: {deadline['task_name']}, "
-                                 f"Due: {deadline['deadline']}")
-            
-            # Send email notifications for critical deadlines
-            if critical_deadlines:
-                try:
-                    from worker.email_tasks import send_deadline_reminder_email
-                    for deadline in critical_deadlines[:5]:  # Limit to 5 notifications per run
-                        student_email = f"student{deadline.get('student_id', 'unknown')}@pulseedu.local"
-                        send_deadline_reminder_email.delay(
-                            student_email,
-                            deadline.get('task_name', 'Задание'),
-                            deadline.get('deadline', 'не указан'),
-                            deadline.get('course_name', 'Курс')
-                        )
-                    logger.info(f"Deadline reminder emails triggered for {len(critical_deadlines[:5])} students")
-                except Exception as email_error:
-                    logger.warning(f"Failed to trigger deadline reminder emails: {email_error}")
-            
-            return {
-                "status": "success",
-                "upcoming_deadlines": len(upcoming_deadlines),
-                "overdue_tasks": overdue_tasks,
-                "critical_deadlines": len(critical_deadlines),
-                "timestamp": config_service.now().isoformat()
-            }
+        overdue_tasks = db.query(TaskCompletion).filter(
+            and_(
+                TaskCompletion.deadline.isnot(None),
+                TaskCompletion.deadline < current_time,
+                TaskCompletion.status != "Выполнено"
+            )
+        ).count()
+        
+        # Log critical deadlines (due within 24 hours)
+        critical_deadlines = [d for d in upcoming_deadlines if d["days_left"] <= 1]
+        
+        if critical_deadlines:
+            logger.warning(f"Found {len(critical_deadlines)} critical deadlines")
+            for deadline in critical_deadlines:
+                logger.warning(f"Critical deadline: Student {deadline['student_id']}, "
+                             f"Task: {deadline['task_name']}, "
+                             f"Due: {deadline['deadline']}")
+        
+        # Send email notifications for critical deadlines
+        if critical_deadlines:
+            try:
+                from worker.email_tasks import send_deadline_reminder_email
+                for deadline in critical_deadlines[:5]:  # Limit to 5 notifications per run
+                    student_email = f"student{deadline.get('student_id', 'unknown')}@pulseedu.local"
+                    send_deadline_reminder_email.delay(
+                        student_email,
+                        deadline.get('task_name', 'Задание'),
+                        deadline.get('deadline', 'не указан'),
+                        deadline.get('course_name', 'Курс')
+                    )
+                logger.info(f"Deadline reminder emails triggered for {len(critical_deadlines[:5])} students")
+            except Exception as email_error:
+                logger.warning(f"Failed to trigger deadline reminder emails: {email_error}")
+        
+        return {
+            "status": "success",
+            "upcoming_deadlines": len(upcoming_deadlines),
+            "overdue_tasks": overdue_tasks,
+            "critical_deadlines": len(critical_deadlines),
+            "timestamp": config_service.now().isoformat()
+        }
             
     except Exception as e:
         logger.error(f"Error in check_deadlines: {e}")
@@ -139,32 +139,32 @@ def update_task_statuses():
     
     try:
         db = next(get_session())
-            # Get all task completions that might need status updates
-            task_completions = db.query(TaskCompletion).filter(
-                TaskCompletion.deadline.isnot(None)
-            ).all()
+        # Get all task completions that might need status updates
+        task_completions = db.query(TaskCompletion).filter(
+            TaskCompletion.deadline.isnot(None)
+        ).all()
+        
+        updated_count = 0
+        for completion in task_completions:
+            old_status = completion.status
+            new_status = metrics_service.calculate_task_status(completion)
             
-            updated_count = 0
-            for completion in task_completions:
-                old_status = completion.status
-                new_status = metrics_service.calculate_task_status(completion)
-                
-                # Update status if it changed
-                if old_status != new_status:
-                    completion.status = new_status
-                    updated_count += 1
-                    logger.debug(f"Updated task {completion.id} status: {old_status} -> {new_status}")
-            
-            db.commit()
-            
-            logger.info(f"Updated {updated_count} task statuses")
-            
-            return {
-                "status": "success",
-                "updated_count": updated_count,
-                "total_checked": len(task_completions),
-                "timestamp": config_service.now().isoformat()
-            }
+            # Update status if it changed
+            if old_status != new_status:
+                completion.status = new_status
+                updated_count += 1
+                logger.debug(f"Updated task {completion.id} status: {old_status} -> {new_status}")
+        
+        db.commit()
+        
+        logger.info(f"Updated {updated_count} task statuses")
+        
+        return {
+            "status": "success",
+            "updated_count": updated_count,
+            "total_checked": len(task_completions),
+            "timestamp": config_service.now().isoformat()
+        }
             
     except Exception as e:
         logger.error(f"Error in update_task_statuses: {e}")
@@ -185,32 +185,32 @@ def generate_daily_report():
     
     try:
         db = next(get_session())
-            # Get system metrics
-            system_metrics = metrics_service.get_system_metrics(db)
-            
-            # Get upcoming deadlines
-            upcoming_deadlines = metrics_service.get_upcoming_deadlines(7, db)
-            
-            # Get recent activity (last 24 hours)
-            yesterday = config_service.now() - timedelta(days=1)
-            recent_completions = db.query(TaskCompletion).filter(
-                TaskCompletion.completed_at >= yesterday
-            ).count()
-            
-            report = {
-                "date": config_service.now().date().isoformat(),
-                "system_metrics": system_metrics,
-                "upcoming_deadlines": len(upcoming_deadlines),
-                "recent_completions": recent_completions,
-                "generated_at": config_service.now().isoformat()
-            }
-            
-            logger.info(f"Daily report generated: {report}")
-            
-            return {
-                "status": "success",
-                "report": report
-            }
+        # Get system metrics
+        system_metrics = metrics_service.get_system_metrics(db)
+        
+        # Get upcoming deadlines
+        upcoming_deadlines = metrics_service.get_upcoming_deadlines(7, db)
+        
+        # Get recent activity (last 24 hours)
+        yesterday = config_service.now() - timedelta(days=1)
+        recent_completions = db.query(TaskCompletion).filter(
+            TaskCompletion.completed_at >= yesterday
+        ).count()
+        
+        report = {
+            "date": config_service.now().date().isoformat(),
+            "system_metrics": system_metrics,
+            "upcoming_deadlines": len(upcoming_deadlines),
+            "recent_completions": recent_completions,
+            "generated_at": config_service.now().isoformat()
+        }
+        
+        logger.info(f"Daily report generated: {report}")
+        
+        return {
+            "status": "success",
+            "report": report
+        }
             
     except Exception as e:
         logger.error(f"Error in generate_daily_report: {e}")
