@@ -12,6 +12,9 @@
             </div>
         </div>
 
+        <!-- Внутренняя навигация -->
+        {% include "admin/_navigation.html" %}
+
         {% if error %}
         <div class="alert alert-danger" role="alert">
             <i class="bi bi-exclamation-triangle"></i> Ошибка: {{ error }}

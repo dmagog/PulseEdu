@@ -945,3 +945,143 @@ async def assign_course_to_user(
             """,
             status_code=500
         )
+
+
+@router.get("/courses", response_class=HTMLResponse)
+async def admin_courses(
+    request: Request,
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    Admin courses page.
+    
+    Args:
+        request: FastAPI request object
+        db: Database session
+        
+    Returns:
+        HTML response with admin courses
+    """
+    logger.info("Admin courses page requested")
+    
+    try:
+        # Mock courses data
+        courses_data = [
+            {
+                "id": 1,
+                "name": "Программирование на Python",
+                "description": "Основы программирования на языке Python",
+                "teacher": {"id": 1, "name": "Иван Петров"},
+                "student_count": 25,
+                "status": "active",
+                "is_active": True,
+                "created_at": datetime.now()
+            },
+            {
+                "id": 2,
+                "name": "Веб-разработка",
+                "description": "Создание веб-приложений с использованием современных технологий",
+                "teacher": {"id": 2, "name": "Мария Сидорова"},
+                "student_count": 18,
+                "status": "active",
+                "is_active": True,
+                "created_at": datetime.now()
+            },
+            {
+                "id": 3,
+                "name": "Базы данных",
+                "description": "Проектирование и работа с базами данных",
+                "teacher": None,
+                "student_count": 12,
+                "status": "draft",
+                "is_active": False,
+                "created_at": datetime.now()
+            }
+        ]
+        
+        # Mock teachers data for dropdown
+        teachers = [
+            {"id": 1, "name": "Иван Петров"},
+            {"id": 2, "name": "Мария Сидорова"},
+            {"id": 3, "name": "Алексей Козлов"}
+        ]
+        
+        return templates.TemplateResponse("admin/courses.html", {
+            "request": request,
+            "title": "Управление курсами",
+            "courses": courses_data,
+            "teachers": teachers
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading admin courses: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/settings", response_class=HTMLResponse)
+async def admin_settings(
+    request: Request,
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    Admin settings page.
+    
+    Args:
+        request: FastAPI request object
+        db: Database session
+        
+    Returns:
+        HTML response with admin settings
+    """
+    logger.info("Admin settings page requested")
+    
+    try:
+        # Mock settings data
+        settings = {
+            "site_name": "PulseEdu",
+            "site_url": "http://localhost:8000",
+            "timezone": "Europe/Moscow",
+            "language": "ru",
+            "maintenance_mode": False,
+            "smtp_host": "smtp.gmail.com",
+            "smtp_port": 587,
+            "smtp_user": "",
+            "smtp_password": "",
+            "smtp_tls": True,
+            "llm_provider": "openai",
+            "llm_model": "gpt-3.5-turbo",
+            "llm_api_key": "",
+            "llm_max_tokens": 1000,
+            "llm_temperature": 0.7,
+            "session_timeout": 30,
+            "max_login_attempts": 5,
+            "require_email_verification": True,
+            "enable_two_factor": False
+        }
+        
+        # Mock backups data
+        backups = [
+            {
+                "id": "1",
+                "created_at": datetime.now(),
+                "size": "2.5 MB",
+                "status": "completed"
+            },
+            {
+                "id": "2", 
+                "created_at": datetime.now(),
+                "size": "2.3 MB",
+                "status": "completed"
+            }
+        ]
+        
+        return templates.TemplateResponse("admin/settings.html", {
+            "request": request,
+            "title": "Настройки системы",
+            "settings": settings,
+            "backups": backups
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading admin settings: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

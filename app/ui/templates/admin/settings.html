@@ -4,87 +4,378 @@
 
 {% block content %}
 <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-8">
-                <h1>{{ title }}</h1>
-                
-                <!-- Current Time Info -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5>Текущее время системы</h5>
-                    </div>
-                    <div class="card-body">
-                        <p><strong>Режим:</strong> 
-                            {% if is_fake_time %}
-                                <span class="badge bg-warning">Фиктивное время</span>
-                            {% else %}
-                                <span class="badge bg-success">Реальное время</span>
-                            {% endif %}
-                        </p>
-                        <p><strong>Текущее время:</strong> {{ current_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="bi bi-gear"></i> Настройки системы</h1>
+            <p class="text-muted">Конфигурация и параметры системы</p>
+        </div>
+    </div>
+
+    <!-- Внутренняя навигация -->
+    {% include "admin/_navigation.html" %}
+
+    <!-- Settings Tabs -->
+    <div class="row">
+        <div class="col-12">
+            <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">
+                        <i class="bi bi-gear"></i> Общие
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email" type="button" role="tab">
+                        <i class="bi bi-envelope"></i> Email
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="llm-tab" data-bs-toggle="tab" data-bs-target="#llm" type="button" role="tab">
+                        <i class="bi bi-robot"></i> LLM
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                        <i class="bi bi-shield-lock"></i> Безопасность
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="backup-tab" data-bs-toggle="tab" data-bs-target="#backup" type="button" role="tab">
+                        <i class="bi bi-cloud-arrow-down"></i> Резервное копирование
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="settingsTabsContent">
+                <!-- General Settings -->
+                <div class="tab-pane fade show active" id="general" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5><i class="bi bi-gear"></i> Общие настройки</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="/admin/settings/general" method="post">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="siteName" class="form-label">Название сайта</label>
+                                            <input type="text" class="form-control" id="siteName" name="site_name" value="{{ settings.site_name }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="siteUrl" class="form-label">URL сайта</label>
+                                            <input type="url" class="form-control" id="siteUrl" name="site_url" value="{{ settings.site_url }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="timezone" class="form-label">Часовой пояс</label>
+                                            <select class="form-select" id="timezone" name="timezone">
+                                                <option value="Europe/Moscow" {% if settings.timezone == 'Europe/Moscow' %}selected{% endif %}>Москва (UTC+3)</option>
+                                                <option value="Europe/Kiev" {% if settings.timezone == 'Europe/Kiev' %}selected{% endif %}>Киев (UTC+2)</option>
+                                                <option value="Europe/Minsk" {% if settings.timezone == 'Europe/Minsk' %}selected{% endif %}>Минск (UTC+3)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="language" class="form-label">Язык по умолчанию</label>
+                                            <select class="form-select" id="language" name="language">
+                                                <option value="ru" {% if settings.language == 'ru' %}selected{% endif %}>Русский</option>
+                                                <option value="en" {% if settings.language == 'en' %}selected{% endif %}>English</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="maintenanceMode" name="maintenance_mode" {% if settings.maintenance_mode %}checked{% endif %}>
+                                        <label class="form-check-label" for="maintenanceMode">
+                                            Режим обслуживания
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Сохранить</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Settings Form -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Настройки системы</h5>
+                <!-- Email Settings -->
+                <div class="tab-pane fade" id="email" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5><i class="bi bi-envelope"></i> Настройки email</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="/admin/settings/email" method="post">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="smtpHost" class="form-label">SMTP хост</label>
+                                            <input type="text" class="form-control" id="smtpHost" name="smtp_host" value="{{ settings.smtp_host }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="smtpPort" class="form-label">SMTP порт</label>
+                                            <input type="number" class="form-control" id="smtpPort" name="smtp_port" value="{{ settings.smtp_port }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="smtpUser" class="form-label">SMTP пользователь</label>
+                                            <input type="text" class="form-control" id="smtpUser" name="smtp_user" value="{{ settings.smtp_user }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="smtpPassword" class="form-label">SMTP пароль</label>
+                                            <input type="password" class="form-control" id="smtpPassword" name="smtp_password" value="{{ settings.smtp_password }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="smtpTls" name="smtp_tls" {% if settings.smtp_tls %}checked{% endif %}>
+                                        <label class="form-check-label" for="smtpTls">
+                                            Использовать TLS
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Сохранить</button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="testEmail()">Тест email</button>
+                            </form>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <form method="post" action="/admin/settings">
-                            <!-- Time Settings -->
-                            <div class="mb-4">
-                                <h6>Настройки времени</h6>
+                </div>
+
+                <!-- LLM Settings -->
+                <div class="tab-pane fade" id="llm" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5><i class="bi bi-robot"></i> Настройки LLM</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="/admin/settings/llm" method="post">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <label for="app_now_mode" class="form-label">Режим времени</label>
-                                        <select class="form-select" id="app_now_mode" name="app_now_mode">
-                                            <option value="real" {% if settings.APP_NOW_MODE == "real" %}selected{% endif %}>Реальное время</option>
-                                            <option value="fake" {% if settings.APP_NOW_MODE == "fake" %}selected{% endif %}>Фиктивное время</option>
-                                        </select>
+                                        <div class="mb-3">
+                                            <label for="llmProvider" class="form-label">Провайдер LLM</label>
+                                            <select class="form-select" id="llmProvider" name="llm_provider">
+                                                <option value="openai" {% if settings.llm_provider == 'openai' %}selected{% endif %}>OpenAI</option>
+                                                <option value="anthropic" {% if settings.llm_provider == 'anthropic' %}selected{% endif %}>Anthropic</option>
+                                                <option value="local" {% if settings.llm_provider == 'local' %}selected{% endif %}>Локальная модель</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <label for="app_fake_now" class="form-label">Фиктивная дата (YYYY-MM-DD)</label>
-                                        <input type="date" class="form-control" id="app_fake_now" name="app_fake_now" 
-                                               value="{{ settings.APP_FAKE_NOW }}">
+                                        <div class="mb-3">
+                                            <label for="llmModel" class="form-label">Модель</label>
+                                            <input type="text" class="form-control" id="llmModel" name="llm_model" value="{{ settings.llm_model }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="llmApiKey" class="form-label">API ключ</label>
+                                    <input type="password" class="form-control" id="llmApiKey" name="llm_api_key" value="{{ settings.llm_api_key }}">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="llmMaxTokens" class="form-label">Максимум токенов</label>
+                                            <input type="number" class="form-control" id="llmMaxTokens" name="llm_max_tokens" value="{{ settings.llm_max_tokens }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="llmTemperature" class="form-label">Температура</label>
+                                            <input type="number" class="form-control" id="llmTemperature" name="llm_temperature" value="{{ settings.llm_temperature }}" step="0.1" min="0" max="2">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Сохранить</button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="testLLM()">Тест LLM</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Settings -->
+                <div class="tab-pane fade" id="security" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5><i class="bi bi-shield-lock"></i> Настройки безопасности</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="/admin/settings/security" method="post">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="sessionTimeout" class="form-label">Таймаут сессии (минуты)</label>
+                                            <input type="number" class="form-control" id="sessionTimeout" name="session_timeout" value="{{ settings.session_timeout }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="maxLoginAttempts" class="form-label">Максимум попыток входа</label>
+                                            <input type="number" class="form-control" id="maxLoginAttempts" name="max_login_attempts" value="{{ settings.max_login_attempts }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="requireEmailVerification" name="require_email_verification" {% if settings.require_email_verification %}checked{% endif %}>
+                                        <label class="form-check-label" for="requireEmailVerification">
+                                            Требовать подтверждение email
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="enableTwoFactor" name="enable_two_factor" {% if settings.enable_two_factor %}checked{% endif %}>
+                                        <label class="form-check-label" for="enableTwoFactor">
+                                            Включить двухфакторную аутентификацию
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Сохранить</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup Settings -->
+                <div class="tab-pane fade" id="backup" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5><i class="bi bi-cloud-arrow-down"></i> Резервное копирование</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6><i class="bi bi-download"></i> Создать резервную копию</h6>
+                                            <p class="text-muted">Создать полную резервную копию системы</p>
+                                            <button class="btn btn-primary" onclick="createBackup()">
+                                                <i class="bi bi-download"></i> Создать копию
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6><i class="bi bi-upload"></i> Восстановить из копии</h6>
+                                            <p class="text-muted">Восстановить систему из резервной копии</p>
+                                            <input type="file" class="form-control mb-2" id="backupFile" accept=".zip,.tar.gz">
+                                            <button class="btn btn-warning" onclick="restoreBackup()">
+                                                <i class="bi bi-upload"></i> Восстановить
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- LLM Settings -->
-                            <div class="mb-4">
-                                <h6>Настройки LLM</h6>
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label for="llm_max_recs" class="form-label">Макс. рекомендаций</label>
-                                        <input type="number" class="form-control" id="llm_max_recs" name="llm_max_recs" 
-                                               value="{{ settings.LLM_MAX_RECS }}" min="1" max="10">
+                            
+                            <div class="mt-4">
+                                <h6><i class="bi bi-clock-history"></i> История резервных копий</h6>
+                                {% if backups %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Дата создания</th>
+                                                    <th>Размер</th>
+                                                    <th>Статус</th>
+                                                    <th>Действия</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for backup in backups %}
+                                                <tr>
+                                                    <td>{{ backup.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                                    <td>{{ backup.size }}</td>
+                                                    <td>
+                                                        {% if backup.status == 'completed' %}
+                                                            <span class="badge bg-success">Готово</span>
+                                                        {% elif backup.status == 'failed' %}
+                                                            <span class="badge bg-danger">Ошибка</span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning">В процессе</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-primary" onclick="downloadBackup('{{ backup.id }}')">
+                                                            <i class="bi bi-download"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteBackup('{{ backup.id }}')">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <div class="col-md-4">
-                                        <label for="llm_rec_max_chars" class="form-label">Макс. символов в рекомендации</label>
-                                        <input type="number" class="form-control" id="llm_rec_max_chars" name="llm_rec_max_chars" 
-                                               value="{{ settings.LLM_REC_MAX_CHARS }}" min="50" max="1000">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="llm_timeout_seconds" class="form-label">Таймаут (сек)</label>
-                                        <input type="number" class="form-control" id="llm_timeout_seconds" name="llm_timeout_seconds" 
-                                               value="{{ settings.LLM_TIMEOUT_SECONDS }}" min="1" max="60">
-                                    </div>
-                                </div>
-                                <div class="row mt-2">
-                                    <div class="col-md-6">
-                                        <label for="llm_cache_ttl_hours" class="form-label">TTL кеша (часы)</label>
-                                        <input type="number" class="form-control" id="llm_cache_ttl_hours" name="llm_cache_ttl_hours" 
-                                               value="{{ settings.LLM_CACHE_TTL_HOURS }}" min="1" max="168">
-                                    </div>
-                                </div>
+                                {% else %}
+                                    <p class="text-muted">Резервные копии не найдены</p>
+                                {% endif %}
                             </div>
-
-                            <button type="submit" class="btn btn-primary">Сохранить настройки</button>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<script>
+    function testEmail() {
+        // TODO: Implement email test
+        alert('Функция тестирования email будет реализована в следующих итерациях');
+    }
+
+    function testLLM() {
+        // TODO: Implement LLM test
+        alert('Функция тестирования LLM будет реализована в следующих итерациях');
+    }
+
+    function createBackup() {
+        if (confirm('Создать резервную копию системы? Это может занять несколько минут.')) {
+            // TODO: Implement backup creation
+            alert('Функция создания резервной копии будет реализована в следующих итерациях');
+        }
+    }
+
+    function restoreBackup() {
+        const file = document.getElementById('backupFile').files[0];
+        if (!file) {
+            alert('Выберите файл резервной копии');
+            return;
+        }
+        
+        if (confirm('Восстановить систему из резервной копии? Это действие нельзя отменить.')) {
+            // TODO: Implement backup restoration
+            alert('Функция восстановления из резервной копии будет реализована в следующих итерациях');
+        }
+    }
+
+    function downloadBackup(backupId) {
+        // TODO: Implement backup download
+        alert('Функция скачивания резервной копии будет реализована в следующих итерациях');
+    }
+
+    function deleteBackup(backupId) {
+        if (confirm('Удалить резервную копию?')) {
+            // TODO: Implement backup deletion
+            alert('Функция удаления резервной копии будет реализована в следующих итерациях');
+        }
+    }
+</script>
 {% endblock %}
