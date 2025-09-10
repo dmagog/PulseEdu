@@ -70,7 +70,7 @@
                                         <td class="fw-bold">{{ time_slot.time }}</td>
                                         {% for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] %}
                                         <td>
-                                            {% if schedule.lessons[day][time_slot.time] %}
+                                            {% if schedule.lessons and schedule.lessons[day] and schedule.lessons[day][time_slot.time] %}
                                                 {% set lesson = schedule.lessons[day][time_slot.time] %}
                                                 <div class="lesson-card p-2 rounded" 
                                                      style="background-color: {{ lesson.color }}; color: white;">
