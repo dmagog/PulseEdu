@@ -1,0 +1,32 @@
+<!-- Внутренняя навигация ЛК преподавателя -->
+<div class="row mb-4">
+    <div class="col-12">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light rounded">
+            <div class="container-fluid">
+                <div class="navbar-nav">
+                    <a class="nav-link {% if request.url.path == '/teacher/' %}active{% endif %}" href="/teacher/">
+                        <i class="bi bi-speedometer2"></i> Дашборд
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/teacher/courses' %}active{% endif %}" href="/teacher/courses">
+                        <i class="bi bi-book"></i> Мои курсы
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/teacher/students' %}active{% endif %}" href="/teacher/students">
+                        <i class="bi bi-people"></i> Студенты
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/teacher/assignments' %}active{% endif %}" href="/teacher/assignments">
+                        <i class="bi bi-list-task"></i> Задания
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/teacher/analytics' %}active{% endif %}" href="/teacher/analytics">
+                        <i class="bi bi-graph-up"></i> Аналитика
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/teacher/recommendations' %}active{% endif %}" href="/teacher/recommendations">
+                        <i class="bi bi-lightbulb"></i> Рекомендации
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/teacher/schedule' %}active{% endif %}" href="/teacher/schedule">
+                        <i class="bi bi-calendar3"></i> Расписание
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </div>
+</div>

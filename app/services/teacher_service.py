@@ -226,6 +226,216 @@ class TeacherService:
         except Exception as e:
             self.logger.error(f"Error getting risk students: {e}")
             return []
+
+    def get_teacher_courses(self, db: Session) -> List[Dict[str, Any]]:
+        """
+        Get teacher courses data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            List of course data
+        """
+        try:
+            self.logger.info("Getting teacher courses")
+            
+            # Mock courses data
+            courses = [
+                {
+                    "id": "1",
+                    "name": "Программирование на Python",
+                    "description": "Основы программирования на языке Python",
+                    "status": "active",
+                    "semester": "1",
+                    "student_count": 25,
+                    "task_count": 12,
+                    "avg_progress": 78,
+                    "start_date": "2024-01-15",
+                    "end_date": "2024-05-15",
+                    "duration": 120
+                },
+                {
+                    "id": "2",
+                    "name": "Веб-разработка",
+                    "description": "Создание веб-приложений с использованием современных технологий",
+                    "status": "active",
+                    "semester": "2",
+                    "student_count": 20,
+                    "task_count": 15,
+                    "avg_progress": 65,
+                    "start_date": "2024-02-01",
+                    "end_date": "2024-06-01",
+                    "duration": 100
+                },
+                {
+                    "id": "3",
+                    "name": "Базы данных",
+                    "description": "Проектирование и управление базами данных",
+                    "status": "upcoming",
+                    "semester": "3",
+                    "student_count": 18,
+                    "task_count": 10,
+                    "avg_progress": 0,
+                    "start_date": "2024-03-01",
+                    "end_date": "2024-07-01",
+                    "duration": 80
+                }
+            ]
+            
+            return courses
+            
+        except Exception as e:
+            self.logger.error(f"Error getting teacher courses: {e}")
+            return []
+
+    def get_teacher_students(self, db: Session) -> List[Dict[str, Any]]:
+        """
+        Get teacher students data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            List of student data
+        """
+        try:
+            self.logger.info("Getting teacher students")
+            
+            # Mock students data
+            students = [
+                {
+                    "id": "01",
+                    "name": "Иванов Иван Иванович",
+                    "email": "ivanov@example.com",
+                    "courses": [{"name": "Программирование"}, {"name": "Веб-разработка"}],
+                    "course_ids": ["1", "2"],
+                    "cluster_group": "A",
+                    "overall_progress": 85,
+                    "attendance_rate": 92,
+                    "status": "excellent"
+                },
+                {
+                    "id": "02",
+                    "name": "Петров Петр Петрович",
+                    "email": "petrov@example.com",
+                    "courses": [{"name": "Программирование"}],
+                    "course_ids": ["1"],
+                    "cluster_group": "B",
+                    "overall_progress": 72,
+                    "attendance_rate": 78,
+                    "status": "active"
+                },
+                {
+                    "id": "03",
+                    "name": "Сидоров Сидор Сидорович",
+                    "email": "sidorov@example.com",
+                    "courses": [{"name": "Веб-разработка"}],
+                    "course_ids": ["2"],
+                    "cluster_group": "C",
+                    "overall_progress": 45,
+                    "attendance_rate": 55,
+                    "status": "at_risk"
+                }
+            ]
+            
+            return students
+            
+        except Exception as e:
+            self.logger.error(f"Error getting teacher students: {e}")
+            return []
+
+    def get_teacher_analytics(self, db: Session) -> Dict[str, Any]:
+        """
+        Get teacher analytics data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            Dictionary with analytics data
+        """
+        try:
+            self.logger.info("Getting teacher analytics")
+            
+            # Mock analytics data
+            analytics = {
+                "avg_progress": 74,
+                "progress_change": 5.2,
+                "avg_attendance": 82,
+                "attendance_change": 3.1,
+                "completed_tasks": 45,
+                "total_tasks": 60,
+                "at_risk_students": 3,
+                "at_risk_percentage": 12.5,
+                "excellent_students": 8,
+                "good_students": 15
+            }
+            
+            return analytics
+            
+        except Exception as e:
+            self.logger.error(f"Error getting teacher analytics: {e}")
+            return {}
+
+    def get_course_analytics(self, db: Session) -> List[Dict[str, Any]]:
+        """
+        Get course analytics data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            List of course analytics
+        """
+        try:
+            self.logger.info("Getting course analytics")
+            
+            # Mock course analytics data
+            course_analytics = [
+                {
+                    "name": "Программирование на Python",
+                    "code": "PYTHON-101",
+                    "student_count": 25,
+                    "avg_progress": 78,
+                    "avg_attendance": 85,
+                    "completed_tasks": 18,
+                    "total_tasks": 20,
+                    "at_risk_count": 2,
+                    "at_risk_percentage": 8.0,
+                    "rating": 4.2
+                },
+                {
+                    "name": "Веб-разработка",
+                    "code": "WEB-201",
+                    "student_count": 20,
+                    "avg_progress": 65,
+                    "avg_attendance": 78,
+                    "completed_tasks": 15,
+                    "total_tasks": 18,
+                    "at_risk_count": 4,
+                    "at_risk_percentage": 20.0,
+                    "rating": 3.8
+                },
+                {
+                    "name": "Базы данных",
+                    "code": "DB-301",
+                    "student_count": 18,
+                    "avg_progress": 0,
+                    "avg_attendance": 0,
+                    "completed_tasks": 0,
+                    "total_tasks": 12,
+                    "at_risk_count": 0,
+                    "at_risk_percentage": 0.0,
+                    "rating": 0.0
+                }
+            ]
+            
+            return course_analytics
+            
+        except Exception as e:
+            self.logger.error(f"Error getting course analytics: {e}")
+            return []
     
     def _get_risk_students_for_course(self, course_id: int, db: Session) -> List[Dict[str, Any]]:
         """Get risk students for a specific course."""

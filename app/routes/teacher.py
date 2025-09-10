@@ -344,3 +344,111 @@ async def teacher_recommendations(
     except Exception as e:
         logger.error(f"Error rendering teacher recommendations page: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/courses", response_class=HTMLResponse)
+async def teacher_courses(
+    request: Request,
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    Teacher courses page.
+    
+    Args:
+        request: FastAPI request object
+        db: Database session
+        
+    Returns:
+        HTML response with teacher courses
+    """
+    logger.info("Teacher courses page requested")
+    
+    try:
+        # Get teacher courses data
+        courses = teacher_service.get_teacher_courses(db)
+        
+        return templates.TemplateResponse("teacher/courses.html", {
+            "request": request,
+            "title": "Мои курсы",
+            "courses": courses
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading teacher courses: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/students", response_class=HTMLResponse)
+async def teacher_students(
+    request: Request,
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    Teacher students page.
+    
+    Args:
+        request: FastAPI request object
+        db: Database session
+        
+    Returns:
+        HTML response with teacher students
+    """
+    logger.info("Teacher students page requested")
+    
+    try:
+        # Get teacher students data
+        students = teacher_service.get_teacher_students(db)
+        courses = teacher_service.get_teacher_courses(db)
+        
+        return templates.TemplateResponse("teacher/students.html", {
+            "request": request,
+            "title": "Мои студенты",
+            "students": students,
+            "courses": courses
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading teacher students: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/analytics", response_class=HTMLResponse)
+async def teacher_analytics(
+    request: Request,
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    Teacher analytics page.
+    
+    Args:
+        request: FastAPI request object
+        db: Database session
+        
+    Returns:
+        HTML response with teacher analytics
+    """
+    logger.info("Teacher analytics page requested")
+    
+    try:
+        # Get teacher analytics data
+        analytics = teacher_service.get_teacher_analytics(db)
+        courses = teacher_service.get_teacher_courses(db)
+        course_analytics = teacher_service.get_course_analytics(db)
+        
+        return templates.TemplateResponse("teacher/analytics.html", {
+            "request": request,
+            "title": "Аналитика",
+            "analytics": analytics,
+            "courses": courses,
+            "course_analytics": course_analytics,
+            "course_names": [course["name"] for course in course_analytics],
+            "course_progress": [course["avg_progress"] for course in course_analytics],
+            "attendance_dates": ["Неделя 1", "Неделя 2", "Неделя 3", "Неделя 4"],
+            "attendance_values": [85, 88, 82, 90],
+            "task_dates": ["Неделя 1", "Неделя 2", "Неделя 3", "Неделя 4"],
+            "task_completion_values": [12, 18, 15, 22]
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading teacher analytics: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
