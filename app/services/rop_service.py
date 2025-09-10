@@ -373,3 +373,313 @@ class ROPService:
         except Exception as e:
             self.logger.error(f"Error getting course trends: {e}")
             return {"error": str(e)}
+
+    def get_rop_programs(self, db: Session) -> List[Dict[str, Any]]:
+        """
+        Get ROP programs data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            List of program data
+        """
+        try:
+            self.logger.info("Getting ROP programs")
+            
+            # Mock programs data
+            programs = [
+                {
+                    "id": "1",
+                    "name": "Программирование и информационные технологии",
+                    "description": "Бакалаврская программа по программированию",
+                    "status": "active",
+                    "level": "bachelor",
+                    "level_name": "Бакалавриат",
+                    "student_count": 150,
+                    "course_count": 25,
+                    "semesters": 8,
+                    "completion_rate": 78,
+                    "start_date": "2023-09-01",
+                    "end_date": "2027-06-30",
+                    "quality_score": 4.2
+                },
+                {
+                    "id": "2",
+                    "name": "Веб-разработка и дизайн",
+                    "description": "Магистерская программа по веб-разработке",
+                    "status": "active",
+                    "level": "master",
+                    "level_name": "Магистратура",
+                    "student_count": 45,
+                    "course_count": 12,
+                    "semesters": 4,
+                    "completion_rate": 85,
+                    "start_date": "2023-09-01",
+                    "end_date": "2025-06-30",
+                    "quality_score": 4.5
+                },
+                {
+                    "id": "3",
+                    "name": "Анализ данных и машинное обучение",
+                    "description": "Специализированная программа по анализу данных",
+                    "status": "planning",
+                    "level": "specialist",
+                    "level_name": "Специалитет",
+                    "student_count": 0,
+                    "course_count": 15,
+                    "semesters": 5,
+                    "completion_rate": 0,
+                    "start_date": "2024-09-01",
+                    "end_date": "2029-06-30",
+                    "quality_score": 0
+                }
+            ]
+            
+            return programs
+            
+        except Exception as e:
+            self.logger.error(f"Error getting ROP programs: {e}")
+            return []
+
+    def get_rop_trends(self, db: Session) -> Dict[str, Any]:
+        """
+        Get ROP trends data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            Dictionary with trends data
+        """
+        try:
+            self.logger.info("Getting ROP trends")
+            
+            # Mock trends data
+            trends = {
+                "enrollment_growth": 12.5,
+                "performance_improvement": 8.3,
+                "satisfaction_score": 4.3,
+                "employment_rate": 89
+            }
+            
+            return trends
+            
+        except Exception as e:
+            self.logger.error(f"Error getting ROP trends: {e}")
+            return {}
+
+    def get_quality_predictions(self, db: Session) -> Dict[str, Any]:
+        """
+        Get quality predictions data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            Dictionary with predictions data
+        """
+        try:
+            self.logger.info("Getting quality predictions")
+            
+            # Mock predictions data
+            predictions = {
+                "enrollment_growth": 15,
+                "enrollment_forecast": 180,
+                "graduation_rate": 82,
+                "graduation_forecast": 125,
+                "employment_rate": 92,
+                "employment_forecast": 115
+            }
+            
+            return predictions
+            
+        except Exception as e:
+            self.logger.error(f"Error getting quality predictions: {e}")
+            return {}
+
+    def get_quality_metrics(self, db: Session) -> Dict[str, Any]:
+        """
+        Get quality metrics data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            Dictionary with quality metrics
+        """
+        try:
+            self.logger.info("Getting quality metrics")
+            
+            # Mock quality metrics data
+            quality = {
+                "overall_rating": 4.3,
+                "satisfaction_score": 87,
+                "employment_rate": 89,
+                "improvement_rate": 12.5
+            }
+            
+            return quality
+            
+        except Exception as e:
+            self.logger.error(f"Error getting quality metrics: {e}")
+            return {}
+
+    def get_quality_dimensions(self, db: Session) -> List[Dict[str, Any]]:
+        """
+        Get quality dimensions data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            List of quality dimensions
+        """
+        try:
+            self.logger.info("Getting quality dimensions")
+            
+            # Mock quality dimensions data
+            quality_dimensions = [
+                {
+                    "name": "Содержание программы",
+                    "description": "Актуальность и полнота учебного плана",
+                    "score": 4.5
+                },
+                {
+                    "name": "Качество преподавания",
+                    "description": "Квалификация и методика преподавателей",
+                    "score": 4.2
+                },
+                {
+                    "name": "Инфраструктура",
+                    "description": "Оборудование и учебные помещения",
+                    "score": 4.0
+                },
+                {
+                    "name": "Поддержка студентов",
+                    "description": "Консультации и помощь в обучении",
+                    "score": 4.3
+                },
+                {
+                    "name": "Практическая подготовка",
+                    "description": "Стажировки и проектная работа",
+                    "score": 4.1
+                },
+                {
+                    "name": "Трудоустройство",
+                    "description": "Помощь в поиске работы",
+                    "score": 4.4
+                }
+            ]
+            
+            return quality_dimensions
+            
+        except Exception as e:
+            self.logger.error(f"Error getting quality dimensions: {e}")
+            return []
+
+    def get_quality_issues(self, db: Session) -> List[Dict[str, Any]]:
+        """
+        Get quality issues data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            List of quality issues
+        """
+        try:
+            self.logger.info("Getting quality issues")
+            
+            # Mock quality issues data
+            quality_issues = [
+                {
+                    "title": "Недостаток современного оборудования",
+                    "description": "Требуется обновление компьютерных классов"
+                },
+                {
+                    "title": "Низкая активность студентов",
+                    "description": "Снижение участия в практических занятиях"
+                }
+            ]
+            
+            return quality_issues
+            
+        except Exception as e:
+            self.logger.error(f"Error getting quality issues: {e}")
+            return []
+
+    def get_quality_recommendations(self, db: Session) -> List[Dict[str, Any]]:
+        """
+        Get quality recommendations data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            List of quality recommendations
+        """
+        try:
+            self.logger.info("Getting quality recommendations")
+            
+            # Mock quality recommendations data
+            quality_recommendations = [
+                {
+                    "title": "Внедрить интерактивные методы обучения",
+                    "description": "Использовать больше практических заданий и проектов"
+                },
+                {
+                    "title": "Улучшить обратную связь",
+                    "description": "Регулярно собирать отзывы студентов и анализировать их"
+                }
+            ]
+            
+            return quality_recommendations
+            
+        except Exception as e:
+            self.logger.error(f"Error getting quality recommendations: {e}")
+            return []
+
+    def get_improvement_plans(self, db: Session) -> List[Dict[str, Any]]:
+        """
+        Get improvement plans data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            List of improvement plans
+        """
+        try:
+            self.logger.info("Getting improvement plans")
+            
+            # Mock improvement plans data
+            improvement_plans = [
+                {
+                    "area": "Инфраструктура",
+                    "action": "Обновить компьютерные классы",
+                    "responsible": "Технический отдел",
+                    "deadline": "2024-06-30",
+                    "status": "in_progress"
+                },
+                {
+                    "area": "Методика обучения",
+                    "action": "Внедрить проектное обучение",
+                    "responsible": "Кафедра программирования",
+                    "deadline": "2024-09-01",
+                    "status": "planned"
+                },
+                {
+                    "area": "Поддержка студентов",
+                    "action": "Создать центр карьеры",
+                    "responsible": "Отдел по работе со студентами",
+                    "deadline": "2024-03-31",
+                    "status": "completed"
+                }
+            ]
+            
+            return improvement_plans
+            
+        except Exception as e:
+            self.logger.error(f"Error getting improvement plans: {e}")
+            return []

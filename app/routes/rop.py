@@ -195,3 +195,130 @@ async def get_course_trends_api(
     except Exception as e:
         logger.error(f"Error getting course trends API: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/programs", response_class=HTMLResponse)
+async def rop_programs(
+    request: Request,
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    ROP programs page.
+    
+    Args:
+        request: FastAPI request object
+        db: Database session
+        
+    Returns:
+        HTML response with ROP programs
+    """
+    logger.info("ROP programs page requested")
+    
+    try:
+        # Get ROP programs data
+        programs = rop_service.get_rop_programs(db)
+        
+        return templates.TemplateResponse("rop/programs.html", {
+            "request": request,
+            "title": "Образовательные программы",
+            "programs": programs
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading ROP programs: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/trends", response_class=HTMLResponse)
+async def rop_trends(
+    request: Request,
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    ROP trends page.
+    
+    Args:
+        request: FastAPI request object
+        db: Database session
+        
+    Returns:
+        HTML response with ROP trends
+    """
+    logger.info("ROP trends page requested")
+    
+    try:
+        # Get ROP trends data
+        trends = rop_service.get_rop_trends(db)
+        programs = rop_service.get_rop_programs(db)
+        predictions = rop_service.get_quality_predictions(db)
+        
+        return templates.TemplateResponse("rop/trends.html", {
+            "request": request,
+            "title": "Тренды и прогнозы",
+            "trends": trends,
+            "programs": programs,
+            "predictions": predictions,
+            "enrollment_dates": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
+            "enrollment_values": [120, 135, 142, 158, 165, 172],
+            "completion_dates": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
+            "completion_values": [85, 87, 89, 91, 88, 92],
+            "program_names": ["Программирование", "Веб-разработка", "Базы данных"],
+            "performance_values": [4.2, 3.8, 4.0],
+            "grades_distribution": {
+                "excellent": 35,
+                "good": 45,
+                "satisfactory": 18,
+                "unsatisfactory": 2
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading ROP trends: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/quality", response_class=HTMLResponse)
+async def rop_quality(
+    request: Request,
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    ROP quality page.
+    
+    Args:
+        request: FastAPI request object
+        db: Database session
+        
+    Returns:
+        HTML response with ROP quality
+    """
+    logger.info("ROP quality page requested")
+    
+    try:
+        # Get ROP quality data
+        quality = rop_service.get_quality_metrics(db)
+        quality_dimensions = rop_service.get_quality_dimensions(db)
+        quality_issues = rop_service.get_quality_issues(db)
+        quality_recommendations = rop_service.get_quality_recommendations(db)
+        improvement_plans = rop_service.get_improvement_plans(db)
+        programs = rop_service.get_rop_programs(db)
+        
+        return templates.TemplateResponse("rop/quality.html", {
+            "request": request,
+            "title": "Качество образования",
+            "quality": quality,
+            "quality_dimensions": quality_dimensions,
+            "quality_issues": quality_issues,
+            "quality_recommendations": quality_recommendations,
+            "improvement_plans": improvement_plans,
+            "quality_dimensions_names": [dim["name"] for dim in quality_dimensions],
+            "quality_dimensions_scores": [dim["score"] for dim in quality_dimensions],
+            "quality_trend_dates": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
+            "quality_trend_values": [4.1, 4.2, 4.3, 4.4, 4.3, 4.5],
+            "program_names": [program["name"] for program in programs],
+            "program_quality_scores": [program["quality_score"] for program in programs]
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading ROP quality: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

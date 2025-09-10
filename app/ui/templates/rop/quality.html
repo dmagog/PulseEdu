@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="bi bi-award"></i> Качество образования</h1>
+            <p class="text-muted">Мониторинг качества образовательных программ и процессов</p>
+        </div>
+    </div>
+
+    <!-- Внутренняя навигация -->
+    {% include "rop/_navigation.html" %}
+
+    <!-- Quality Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-award text-primary" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Общий рейтинг</h5>
+                    <h3 class="text-primary">{{ quality.overall_rating }}/5</h3>
+                    <small class="text-muted">
+                        {% if quality.overall_rating >= 4.5 %}
+                            <span class="text-success">Отличное качество</span>
+                        {% elif quality.overall_rating >= 3.5 %}
+                            <span class="text-warning">Хорошее качество</span>
+                        {% else %}
+                            <span class="text-danger">Требует улучшения</span>
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-emoji-smile text-success" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Удовлетворенность</h5>
+                    <h3 class="text-success">{{ quality.satisfaction_score }}%</h3>
+                    <small class="text-muted">студентов довольны</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-briefcase text-info" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Трудоустройство</h5>
+                    <h3 class="text-info">{{ quality.employment_rate }}%</h3>
+                    <small class="text-muted">выпускников работают</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up text-warning" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Рост качества</h5>
+                    <h3 class="text-warning">+{{ quality.improvement_rate }}%</h3>
+                    <small class="text-muted">за последний год</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quality Dimensions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-list-check"></i> Критерии качества</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for dimension in quality_dimensions %}
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ dimension.name }}</h6>
+                                    <small class="text-muted">{{ dimension.description }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold">{{ dimension.score }}/5</div>
+                                    <div class="progress" style="width: 100px; height: 8px;">
+                                        <div class="progress-bar" style="width: {{ (dimension.score / 5 * 100) }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quality Charts -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-radar"></i> Радар качества</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="qualityRadarChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-graph-up"></i> Динамика качества</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="qualityTrendChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Program Quality Comparison -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-bar-chart"></i> Сравнение качества программ</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="programQualityChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quality Issues -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-exclamation-triangle"></i> Проблемные области</h5>
+                </div>
+                <div class="card-body">
+                    {% if quality_issues %}
+                        {% for issue in quality_issues %}
+                        <div class="alert alert-warning d-flex align-items-center mb-2">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <div>
+                                <strong>{{ issue.title }}</strong>
+                                <br>
+                                <small>{{ issue.description }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                            <p class="mt-2">Критических проблем не выявлено</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-lightbulb"></i> Рекомендации по улучшению</h5>
+                </div>
+                <div class="card-body">
+                    {% if quality_recommendations %}
+                        {% for recommendation in quality_recommendations %}
+                        <div class="alert alert-info d-flex align-items-center mb-2">
+                            <i class="bi bi-lightbulb me-2"></i>
+                            <div>
+                                <strong>{{ recommendation.title }}</strong>
+                                <br>
+                                <small>{{ recommendation.description }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                            <p class="mt-2">Система работает эффективно</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quality Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-tools"></i> Планы по улучшению качества</h5>
+                </div>
+                <div class="card-body">
+                    {% if improvement_plans %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Область</th>
+                                        <th>План действий</th>
+                                        <th>Ответственный</th>
+                                        <th>Срок</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for plan in improvement_plans %}
+                                    <tr>
+                                        <td>{{ plan.area }}</td>
+                                        <td>{{ plan.action }}</td>
+                                        <td>{{ plan.responsible }}</td>
+                                        <td>{{ plan.deadline }}</td>
+                                        <td>
+                                            {% if plan.status == 'completed' %}
+                                                <span class="badge bg-success">Завершено</span>
+                                            {% elif plan.status == 'in_progress' %}
+                                                <span class="badge bg-warning">В процессе</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Планируется</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Планы по улучшению не определены</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Quality Radar Chart
+    const qualityRadarCtx = document.getElementById('qualityRadarChart').getContext('2d');
+    new Chart(qualityRadarCtx, {
+        type: 'radar',
+        data: {
+            labels: {{ quality_dimensions_names|tojson }},
+            datasets: [{
+                label: 'Текущее качество',
+                data: {{ quality_dimensions_scores|tojson }},
+                borderColor: 'rgba(0, 123, 255, 1)',
+                backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                pointBackgroundColor: 'rgba(0, 123, 255, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(0, 123, 255, 1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            }
+        }
+    });
+
+    // Quality Trend Chart
+    const qualityTrendCtx = document.getElementById('qualityTrendChart').getContext('2d');
+    new Chart(qualityTrendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ quality_trend_dates|tojson }},
+            datasets: [{
+                label: 'Общий рейтинг',
+                data: {{ quality_trend_values|tojson }},
+                borderColor: 'rgba(40, 167, 69, 1)',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            }
+        }
+    });
+
+    // Program Quality Chart
+    const programQualityCtx = document.getElementById('programQualityChart').getContext('2d');
+    new Chart(programQualityCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ program_names|tojson }},
+            datasets: [{
+                label: 'Рейтинг качества',
+                data: {{ program_quality_scores|tojson }},
+                backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
