@@ -436,6 +436,168 @@ class TeacherService:
         except Exception as e:
             self.logger.error(f"Error getting course analytics: {e}")
             return []
+
+    def get_teacher_schedule(self, db: Session) -> Dict[str, Any]:
+        """
+        Get teacher schedule data.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            Dictionary with schedule data
+        """
+        try:
+            self.logger.info("Getting teacher schedule")
+            
+            # Mock schedule data
+            schedule = {
+                "time_slots": [
+                    {"time": "09:00"},
+                    {"time": "10:30"},
+                    {"time": "12:00"},
+                    {"time": "13:30"},
+                    {"time": "15:00"},
+                    {"time": "16:30"}
+                ],
+                "lessons": {
+                    "monday": {
+                        "09:00": {
+                            "id": "1",
+                            "course_name": "Программирование",
+                            "room": "А-101",
+                            "group": "Группа 1",
+                            "color": "#007bff"
+                        },
+                        "12:00": {
+                            "id": "2",
+                            "course_name": "Веб-разработка",
+                            "room": "Б-202",
+                            "group": "Группа 2",
+                            "color": "#28a745"
+                        }
+                    },
+                    "tuesday": {
+                        "10:30": {
+                            "id": "3",
+                            "course_name": "Базы данных",
+                            "room": "В-303",
+                            "group": "Группа 1",
+                            "color": "#ffc107"
+                        }
+                    },
+                    "wednesday": {
+                        "09:00": {
+                            "id": "4",
+                            "course_name": "Программирование",
+                            "room": "А-101",
+                            "group": "Группа 2",
+                            "color": "#007bff"
+                        }
+                    },
+                    "thursday": {
+                        "13:30": {
+                            "id": "5",
+                            "course_name": "Веб-разработка",
+                            "room": "Б-202",
+                            "group": "Группа 1",
+                            "color": "#28a745"
+                        }
+                    },
+                    "friday": {
+                        "15:00": {
+                            "id": "6",
+                            "course_name": "Базы данных",
+                            "room": "В-303",
+                            "group": "Группа 2",
+                            "color": "#ffc107"
+                        }
+                    }
+                }
+            }
+            
+            return schedule
+            
+        except Exception as e:
+            self.logger.error(f"Error getting teacher schedule: {e}")
+            return {"time_slots": [], "lessons": {}}
+
+    def get_upcoming_lessons(self, db: Session) -> List[Dict[str, Any]]:
+        """
+        Get upcoming lessons for teacher.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            List of upcoming lessons
+        """
+        try:
+            self.logger.info("Getting upcoming lessons")
+            
+            # Mock upcoming lessons data
+            upcoming_lessons = [
+                {
+                    "id": "1",
+                    "course_name": "Программирование на Python",
+                    "topic": "Основы ООП",
+                    "date": "2024-01-15",
+                    "time": "09:00",
+                    "room": "А-101",
+                    "group": "Группа 1"
+                },
+                {
+                    "id": "2",
+                    "course_name": "Веб-разработка",
+                    "topic": "React компоненты",
+                    "date": "2024-01-15",
+                    "time": "12:00",
+                    "room": "Б-202",
+                    "group": "Группа 2"
+                },
+                {
+                    "id": "3",
+                    "course_name": "Базы данных",
+                    "topic": "SQL запросы",
+                    "date": "2024-01-16",
+                    "time": "10:30",
+                    "room": "В-303",
+                    "group": "Группа 1"
+                }
+            ]
+            
+            return upcoming_lessons
+            
+        except Exception as e:
+            self.logger.error(f"Error getting upcoming lessons: {e}")
+            return []
+
+    def get_schedule_stats(self, db: Session) -> Dict[str, Any]:
+        """
+        Get schedule statistics for teacher.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            Dictionary with schedule statistics
+        """
+        try:
+            self.logger.info("Getting schedule stats")
+            
+            # Mock schedule stats data
+            schedule_stats = {
+                "weekly_lessons": 12,
+                "weekly_hours": 18,
+                "active_courses": 3,
+                "groups_count": 2
+            }
+            
+            return schedule_stats
+            
+        except Exception as e:
+            self.logger.error(f"Error getting schedule stats: {e}")
+            return {}
     
     def _get_risk_students_for_course(self, course_id: int, db: Session) -> List[Dict[str, Any]]:
         """Get risk students for a specific course."""
