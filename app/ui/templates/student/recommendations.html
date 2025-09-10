@@ -1,343 +1,201 @@
-<!-- LLM Recommendations Block -->
-<div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h6><i class="bi bi-lightbulb"></i> Персональные рекомендации</h6>
-        <button class="btn btn-sm btn-outline-primary" onclick="refreshRecommendations()">
-            <i class="bi bi-arrow-clockwise"></i> Обновить
-        </button>
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="bi bi-lightbulb"></i> Персональные рекомендации</h1>
+            <p class="text-muted">Студент ID: {{ student.id }}</p>
+        </div>
     </div>
-    <div class="card-body">
-        <div id="recommendations-loading" class="text-center" style="display: none;">
-            <div class="spinner-border spinner-border-sm text-primary" role="status">
-                <span class="visually-hidden">Загрузка...</span>
+
+    <!-- Внутренняя навигация -->
+    {% include "student/_navigation.html" %}
+
+    <!-- Recommendation Categories -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary active" onclick="showCategory('all')">
+                            <i class="bi bi-list"></i> Все рекомендации
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="showCategory('study')">
+                            <i class="bi bi-book"></i> Учеба
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="showCategory('time')">
+                            <i class="bi bi-clock"></i> Тайм-менеджмент
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="showCategory('career')">
+                            <i class="bi bi-briefcase"></i> Карьера
+                        </button>
+                    </div>
+                </div>
             </div>
-            <p class="text-muted mt-2">Генерируем рекомендации...</p>
         </div>
-        
-        <div id="recommendations-content">
-            <!-- Recommendations will be loaded here -->
+    </div>
+
+    <!-- Recommendations List -->
+    <div class="row">
+        <div class="col-12">
+            {% if recommendations %}
+                {% for recommendation in recommendations %}
+                <div class="card mb-3 recommendation-card" data-category="{{ recommendation.category }}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-1">
+                                <div class="recommendation-icon">
+                                    {% if recommendation.category == 'study' %}
+                                        <i class="bi bi-book text-primary" style="font-size: 2rem;"></i>
+                                    {% elif recommendation.category == 'time' %}
+                                        <i class="bi bi-clock text-warning" style="font-size: 2rem;"></i>
+                                    {% elif recommendation.category == 'career' %}
+                                        <i class="bi bi-briefcase text-success" style="font-size: 2rem;"></i>
+                                    {% else %}
+                                        <i class="bi bi-lightbulb text-info" style="font-size: 2rem;"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <h5 class="card-title">{{ recommendation.title }}</h5>
+                                <p class="card-text">{{ recommendation.description }}</p>
+                                <div class="recommendation-meta">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar"></i> {{ recommendation.created_at }} | 
+                                        <i class="bi bi-tag"></i> {{ recommendation.category_name }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <div class="recommendation-actions">
+                                    {% if recommendation.priority == 'high' %}
+                                        <span class="badge bg-danger mb-2">Высокий приоритет</span>
+                                    {% elif recommendation.priority == 'medium' %}
+                                        <span class="badge bg-warning mb-2">Средний приоритет</span>
+                                    {% else %}
+                                        <span class="badge bg-info mb-2">Низкий приоритет</span>
+                                    {% endif %}
+                                    <br>
+                                    <button class="btn btn-primary btn-sm" onclick="applyRecommendation('{{ recommendation.id }}')">
+                                        <i class="bi bi-check"></i> Применить
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="dismissRecommendation('{{ recommendation.id }}')">
+                                        <i class="bi bi-x"></i> Отклонить
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-lightbulb" style="font-size: 3rem; color: #6c757d;"></i>
+                        <h5 class="mt-3">Нет рекомендаций</h5>
+                        <p class="text-muted">Система пока не сгенерировала персональные рекомендации</p>
+                        <button class="btn btn-primary" onclick="generateRecommendations()">
+                            <i class="bi bi-arrow-clockwise"></i> Сгенерировать рекомендации
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
         </div>
-        
-        <div id="recommendations-error" class="alert alert-warning" style="display: none;">
-            <i class="bi bi-exclamation-triangle"></i>
-            <span id="error-message">Ошибка загрузки рекомендаций</span>
+    </div>
+
+    <!-- Recommendation History -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-clock-history"></i> История рекомендаций</h5>
+                </div>
+                <div class="card-body">
+                    {% if recommendation_history %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Рекомендация</th>
+                                        <th>Статус</th>
+                                        <th>Дата</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in recommendation_history %}
+                                    <tr>
+                                        <td>{{ item.title }}</td>
+                                        <td>
+                                            {% if item.status == 'applied' %}
+                                                <span class="badge bg-success">Применено</span>
+                                            {% elif item.status == 'dismissed' %}
+                                                <span class="badge bg-secondary">Отклонено</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">В ожидании</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ item.date }}</td>
+                                        <td>
+                                            {% if item.status == 'pending' %}
+                                                <button class="btn btn-primary btn-sm" onclick="applyRecommendation('{{ item.id }}')">
+                                                    <i class="bi bi-check"></i> Применить
+                                                </button>
+                                                <button class="btn btn-outline-secondary btn-sm" onclick="dismissRecommendation('{{ item.id }}')">
+                                                    <i class="bi bi-x"></i> Отклонить
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Нет истории рекомендаций</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-let currentStudentId = '{{ student.id }}';
-let currentCourseId = null;
-
-// Initialize recommendations when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Try to get recommendations for the first course if available
-    const firstCourse = document.querySelector('.course-card');
-    if (firstCourse) {
-        const courseId = firstCourse.dataset.courseId;
-        if (courseId) {
-            currentCourseId = courseId;
-            loadRecommendations(courseId);
-        }
-    }
-});
-
-async function loadRecommendations(courseId) {
-    if (!courseId) {
-        showError('Курс не выбран');
-        return;
-    }
-    
-    currentCourseId = courseId;
-    showLoading();
-    hideError();
-    
-    try {
-        // First, try to get cached recommendations
-        const response = await fetch(`/api/llm/recommendations/${currentStudentId}/${courseId}/result`);
-        const data = await response.json();
+    function showCategory(category) {
+        // Remove active class from all buttons
+        document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
         
-        if (data.status === 'success') {
-            displayRecommendations(data.recommendations);
-        } else if (data.status === 'not_found' || data.status === 'expired') {
-            // Generate new recommendations
-            await generateRecommendations(courseId);
-        } else {
-            showError(data.message || 'Неизвестная ошибка');
-        }
-    } catch (error) {
-        console.error('Error loading recommendations:', error);
-        showError('Ошибка загрузки рекомендаций');
-    }
-}
-
-async function generateRecommendations(courseId) {
-    try {
-        const response = await fetch(`/api/llm/recommendations/${currentStudentId}/${courseId}?force_refresh=true`);
-        const data = await response.json();
+        // Add active class to clicked button
+        event.target.classList.add('active');
         
-        if (data.status === 'processing') {
-            // Poll for results
-            pollForRecommendations(courseId, data.task_id);
-        } else {
-            showError(data.message || 'Ошибка генерации рекомендаций');
-        }
-    } catch (error) {
-        console.error('Error generating recommendations:', error);
-        showError('Ошибка генерации рекомендаций');
-    }
-}
-
-async function pollForRecommendations(courseId, taskId) {
-    const maxAttempts = 30; // 30 seconds max
-    let attempts = 0;
-    
-    const poll = async () => {
-        attempts++;
-        
-        try {
-            const response = await fetch(`/api/llm/recommendations/${currentStudentId}/${courseId}/result`);
-            const data = await response.json();
-            
-            if (data.status === 'success') {
-                displayRecommendations(data.recommendations);
-            } else if (attempts < maxAttempts) {
-                setTimeout(poll, 1000); // Poll every second
+        // Show/hide recommendation cards
+        const cards = document.querySelectorAll('.recommendation-card');
+        cards.forEach(card => {
+            if (category === 'all' || card.dataset.category === category) {
+                card.style.display = 'block';
             } else {
-                showError('Время ожидания истекло');
-            }
-        } catch (error) {
-            console.error('Error polling recommendations:', error);
-            if (attempts < maxAttempts) {
-                setTimeout(poll, 1000);
-            } else {
-                showError('Ошибка получения рекомендаций');
-            }
-        }
-    };
-    
-    poll();
-}
-
-function displayRecommendations(recommendations) {
-    const content = document.getElementById('recommendations-content');
-    
-    if (!recommendations || recommendations.length === 0) {
-        content.innerHTML = '<p class="text-muted">Рекомендации не найдены</p>';
-        return;
-    }
-    
-    let html = '';
-    recommendations.forEach((rec, index) => {
-        html += `
-            <div class="recommendation-item mb-3 p-3 border rounded">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h6 class="mb-0">
-                        <i class="bi bi-lightbulb-fill text-warning"></i>
-                        Рекомендация ${rec.id}
-                    </h6>
-                    <div class="rating-stars" data-recommendation-id="${rec.id}">
-                        ${generateStarRating(0)}
-                    </div>
-                </div>
-                <div class="recommendation-content">
-                    ${rec.html}
-                </div>
-                <div class="recommendation-actions mt-2">
-                    <small class="text-muted">Оцените рекомендацию:</small>
-                    <div class="star-rating mt-1" data-recommendation-id="${rec.id}">
-                        ${generateStarRating(0)}
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    content.innerHTML = html;
-    
-    // Add event listeners for star ratings
-    addStarRatingListeners();
-}
-
-function generateStarRating(rating) {
-    let html = '';
-    for (let i = 1; i <= 5; i++) {
-        const filled = i <= rating ? 'bi-star-fill' : 'bi-star';
-        const color = i <= rating ? 'text-warning' : 'text-muted';
-        html += `<i class="bi ${filled} ${color} star-rating-star" data-rating="${i}" style="cursor: pointer;"></i>`;
-    }
-    return html;
-}
-
-function addStarRatingListeners() {
-    document.querySelectorAll('.star-rating-star').forEach(star => {
-        star.addEventListener('click', async function() {
-            const rating = parseInt(this.dataset.rating);
-            const recommendationId = this.closest('.star-rating').dataset.recommendationId;
-            
-            // Update visual rating
-            const stars = this.parentElement.querySelectorAll('.star-rating-star');
-            stars.forEach((s, index) => {
-                if (index < rating) {
-                    s.className = 'bi bi-star-fill text-warning star-rating-star';
-                } else {
-                    s.className = 'bi bi-star text-muted star-rating-star';
-                }
-                s.dataset.rating = index + 1;
-            });
-            
-            // Send rating to server
-            try {
-                await fetch(`/api/llm/recommendations/${currentStudentId}/${currentCourseId}/rate`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        rating: rating,
-                        feedback_text: ''
-                    })
-                });
-                
-                // Show success message
-                showSuccessMessage('Спасибо за оценку!');
-            } catch (error) {
-                console.error('Error rating recommendation:', error);
-                showErrorMessage('Ошибка сохранения оценки');
+                card.style.display = 'none';
             }
         });
-    });
-}
-
-function refreshRecommendations() {
-    if (currentCourseId) {
-        loadRecommendations(currentCourseId);
-    } else {
-        showError('Выберите курс для получения рекомендаций');
-    }
-}
-
-function showLoading() {
-    document.getElementById('recommendations-loading').style.display = 'block';
-    document.getElementById('recommendations-content').style.display = 'none';
-    document.getElementById('recommendations-error').style.display = 'none';
-}
-
-function hideLoading() {
-    document.getElementById('recommendations-loading').style.display = 'none';
-    document.getElementById('recommendations-content').style.display = 'block';
-}
-
-function showError(message) {
-    document.getElementById('recommendations-loading').style.display = 'none';
-    document.getElementById('recommendations-content').style.display = 'none';
-    document.getElementById('recommendations-error').style.display = 'block';
-    document.getElementById('error-message').textContent = message;
-}
-
-function hideError() {
-    document.getElementById('recommendations-error').style.display = 'none';
-}
-
-function showSuccessMessage(message) {
-    // Create temporary success message
-    const alert = document.createElement('div');
-    alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
-    alert.style.top = '20px';
-    alert.style.right = '20px';
-    alert.style.zIndex = '9999';
-    alert.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(alert);
-    
-    // Auto-remove after 3 seconds
-    setTimeout(() => {
-        if (alert.parentNode) {
-            alert.parentNode.removeChild(alert);
-        }
-    }, 3000);
-}
-
-function showErrorMessage(message) {
-    // Create temporary error message
-    const alert = document.createElement('div');
-    alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
-    alert.style.top = '20px';
-    alert.style.right = '20px';
-    alert.style.zIndex = '9999';
-    alert.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(alert);
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (alert.parentNode) {
-            alert.parentNode.removeChild(alert);
-        }
-    }, 5000);
-}
-
-// Make functions available globally for course selection
-window.loadRecommendations = loadRecommendations;
-
-function selectCourse(courseId) {
-    // Remove active class from all course cards
-    document.querySelectorAll('.course-card').forEach(card => {
-        card.classList.remove('border-primary');
-    });
-    
-    // Add active class to selected course
-    const selectedCard = document.querySelector(`[data-course-id="${courseId}"]`);
-    if (selectedCard) {
-        selectedCard.classList.add('border-primary');
     }
     
-    // Load recommendations for selected course
-    loadRecommendations(courseId);
-}
+    function applyRecommendation(recommendationId) {
+        // TODO: Implement recommendation application
+        alert('Функция применения рекомендации будет реализована в следующих итерациях');
+    }
+    
+    function dismissRecommendation(recommendationId) {
+        // TODO: Implement recommendation dismissal
+        alert('Функция отклонения рекомендации будет реализована в следующих итерациях');
+    }
+    
+    function generateRecommendations() {
+        // TODO: Implement recommendation generation
+        alert('Функция генерации рекомендаций будет реализована в следующих итерациях');
+    }
 </script>
-
-<style>
-.recommendation-item {
-    background-color: #f8f9fa;
-    border-left: 4px solid #ffc107 !important;
-}
-
-.recommendation-content {
-    line-height: 1.6;
-}
-
-.recommendation-content h1,
-.recommendation-content h2,
-.recommendation-content h3,
-.recommendation-content h4,
-.recommendation-content h5,
-.recommendation-content h6 {
-    font-size: 1.1em;
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.recommendation-content ul,
-.recommendation-content ol {
-    margin-bottom: 0.5rem;
-}
-
-.recommendation-content code {
-    background-color: #e9ecef;
-    padding: 0.2rem 0.4rem;
-    border-radius: 0.25rem;
-    font-size: 0.875em;
-}
-
-.star-rating-star:hover {
-    transform: scale(1.1);
-    transition: transform 0.1s;
-}
-</style>
+{% endblock %}

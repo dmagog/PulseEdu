@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="bi bi-graph-up"></i> Мой прогресс</h1>
+            <p class="text-muted">Студент ID: {{ student.id }}</p>
+        </div>
+    </div>
+
+    <!-- Внутренняя навигация -->
+    {% include "student/_navigation.html" %}
+
+    <!-- Progress Charts -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-graph-up"></i> Общий прогресс по курсам</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="progressChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-calendar-check"></i> Посещаемость</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="attendanceChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Progress -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-list-check"></i> Детальный прогресс</h5>
+                </div>
+                <div class="card-body">
+                    {% if progress_details %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Курс</th>
+                                        <th>Прогресс</th>
+                                        <th>Посещаемость</th>
+                                        <th>Задания</th>
+                                        <th>Оценка</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for course in progress_details %}
+                                    <tr>
+                                        <td>{{ course.name }}</td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar" style="width: {{ course.progress }}%">{{ course.progress }}%</div>
+                                            </div>
+                                        </td>
+                                        <td>{{ course.attendance }}%</td>
+                                        <td>{{ course.tasks_completed }}/{{ course.tasks_total }}</td>
+                                        <td>
+                                            {% if course.grade %}
+                                                <span class="badge bg-success">{{ course.grade }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Не оценено</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Нет данных о прогрессе</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Progress Chart
+    const progressCtx = document.getElementById('progressChart').getContext('2d');
+    new Chart(progressCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Завершено', 'В процессе', 'Не начато'],
+            datasets: [{
+                data: [{{ progress.overall_progress }}, {{ 100 - progress.overall_progress }}, 0],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Attendance Chart
+    const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+    new Chart(attendanceCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Посещено', 'Пропущено'],
+            datasets: [{
+                data: [{{ progress.attendance.attended }}, {{ progress.attendance.total - progress.attendance.attended }}],
+                backgroundColor: ['#17a2b8', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
