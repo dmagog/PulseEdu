@@ -292,4 +292,4 @@ curl "http://localhost:8000/api/llm/status/{task_id}"
 
 ## Поддержка
 
-Сервис разработан командой **DreamTeam_101** в рамках AI Product Hack-2025. Для вопросов и предложений создавайте пишите в ТГ [@dmagog](https://t.me/dmagog)
+Сервис разработан командой **DreamTeam_101** в рамках AI Product Hack-2025. Для вопросов и предложений пишите в ТГ [@dmagog](https://t.me/dmagog)
