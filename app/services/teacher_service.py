@@ -836,3 +836,92 @@ class TeacherService:
             factors.append("Общий низкий прогресс")
         
         return factors
+    
+    def get_teacher_assignments(self, db: Session) -> List[Dict[str, Any]]:
+        """
+        Get all assignments for teacher.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            List of assignment dictionaries
+        """
+        try:
+            self.logger.info("Getting teacher assignments")
+            
+            # Get all tasks (assignments) from all courses
+            tasks = db.query(Task).all()
+            
+            assignments = []
+            for task in tasks:
+                # Get course name
+                course = db.query(Course).filter(Course.id == task.course_id).first()
+                course_name = course.name if course else f"Курс #{task.course_id}"
+                
+                # Get completion statistics
+                completions = db.query(TaskCompletion).filter(
+                    TaskCompletion.task_id == task.id
+                ).all()
+                
+                student_count = len(completions)
+                completed_count = sum(1 for c in completions if c.status == "Выполнено")
+                completion_rate = round((completed_count / student_count * 100), 1) if student_count > 0 else 0
+                
+                assignments.append({
+                    "id": task.id,
+                    "title": task.title,
+                    "description": task.description,
+                    "course_id": task.course_id,
+                    "course_name": course_name,
+                    "student_count": student_count,
+                    "completion_rate": completion_rate,
+                    "due_date": task.due_date.strftime("%d.%m.%Y") if task.due_date else "Не указано",
+                    "created_at": task.created_at.strftime("%d.%m.%Y") if task.created_at else "Не указано",
+                    "status": "active"  # Simplified status for now
+                })
+            
+            return assignments
+            
+        except Exception as e:
+            self.logger.error(f"Error getting teacher assignments: {e}")
+            return []
+    
+    def get_assignments_stats(self, db: Session) -> Dict[str, Any]:
+        """
+        Get assignment statistics for teacher.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            Dictionary with assignment statistics
+        """
+        try:
+            self.logger.info("Getting assignment statistics")
+            
+            # Get all tasks
+            total_tasks = db.query(Task).count()
+            
+            # Get completion statistics
+            all_completions = db.query(TaskCompletion).all()
+            total_submissions = len(all_completions)
+            completed_submissions = sum(1 for c in all_completions if c.status == "Выполнено")
+            
+            avg_completion = round((completed_submissions / total_submissions * 100), 1) if total_submissions > 0 else 0
+            
+            return {
+                "total_assignments": total_tasks,
+                "active_assignments": total_tasks,  # Simplified - all are considered active
+                "pending_submissions": total_submissions - completed_submissions,
+                "avg_completion": avg_completion
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error getting assignment statistics: {e}")
+            return {
+                "total_assignments": 0,
+                "active_assignments": 0,
+                "pending_submissions": 0,
+                "avg_completion": 0
+            }
