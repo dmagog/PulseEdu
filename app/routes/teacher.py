@@ -112,6 +112,13 @@ async def course_details(
                 })
                 # Store cluster data by student ID for status assignment
                 cluster_data_by_student[cluster.student_id] = cluster.cluster_label
+            
+            # Sort clusters by progress (descending), then by student ID (ascending)
+            # Simplified sorting for now - can be enhanced later with names
+            for cluster_label in cluster_groups:
+                cluster_groups[cluster_label].sort(
+                    key=lambda x: (-x['overall_progress'], x['student_id'])
+                )
         except Exception as e:
             logger.warning(f"Could not load cluster data: {e}")
             cluster_groups = {}

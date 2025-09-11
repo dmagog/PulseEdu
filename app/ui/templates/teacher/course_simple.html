@@ -229,14 +229,21 @@
                                                 {% if cluster_groups.get('A') %}
                                                     {% for cluster_data in cluster_groups['A'] %}
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <small>
+                                                        <div>
+                                                            {% set ns = namespace(student_found=false, student_name='') %}
                                                             {% for student_data in students %}
                                                                 {% if student_data.student.id == cluster_data.student_id %}
-                                                                    {{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})
+                                                                    {% set ns.student_found = true %}
+                                                                    {% set ns.student_name = student_data.student.name or student_data.student.id %}
                                                                 {% endif %}
                                                             {% endfor %}
-                                                        </small>
-                                                        <span class="badge bg-success">{{ cluster_data.overall_progress }}%</span>
+                                                            {% if ns.student_found %}
+                                                                <div>{{ ns.student_name }} <small class="text-muted" style="font-size: 0.75rem;">(ID: {{ cluster_data.student_id }})</small></div>
+                                                            {% else %}
+                                                                <div>Студент <small class="text-muted" style="font-size: 0.75rem;">(ID: {{ cluster_data.student_id }})</small></div>
+                                                            {% endif %}
+                                                        </div>
+                                                        <span class="text-success fw-bold">{{ cluster_data.overall_progress }}%</span>
                                                     </div>
                                                     {% endfor %}
                                                 {% else %}
@@ -258,14 +265,21 @@
                                                 {% if cluster_groups.get('B') %}
                                                     {% for cluster_data in cluster_groups['B'] %}
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <small>
+                                                        <div>
+                                                            {% set ns = namespace(student_found=false, student_name='') %}
                                                             {% for student_data in students %}
                                                                 {% if student_data.student.id == cluster_data.student_id %}
-                                                                    {{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})
+                                                                    {% set ns.student_found = true %}
+                                                                    {% set ns.student_name = student_data.student.name or student_data.student.id %}
                                                                 {% endif %}
                                                             {% endfor %}
-                                                        </small>
-                                                        <span class="badge bg-warning">{{ cluster_data.overall_progress }}%</span>
+                                                            {% if ns.student_found %}
+                                                                <div>{{ ns.student_name }} <small class="text-muted" style="font-size: 0.75rem;">(ID: {{ cluster_data.student_id }})</small></div>
+                                                            {% else %}
+                                                                <div>Студент <small class="text-muted" style="font-size: 0.75rem;">(ID: {{ cluster_data.student_id }})</small></div>
+                                                            {% endif %}
+                                                        </div>
+                                                        <span class="text-warning fw-bold">{{ cluster_data.overall_progress }}%</span>
                                                     </div>
                                                     {% endfor %}
                                                 {% else %}
@@ -287,14 +301,21 @@
                                                 {% if cluster_groups.get('C') %}
                                                     {% for cluster_data in cluster_groups['C'] %}
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <small>
+                                                        <div>
+                                                            {% set ns = namespace(student_found=false, student_name='') %}
                                                             {% for student_data in students %}
                                                                 {% if student_data.student.id == cluster_data.student_id %}
-                                                                    {{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})
+                                                                    {% set ns.student_found = true %}
+                                                                    {% set ns.student_name = student_data.student.name or student_data.student.id %}
                                                                 {% endif %}
                                                             {% endfor %}
-                                                        </small>
-                                                        <span class="badge bg-danger">{{ cluster_data.overall_progress }}%</span>
+                                                            {% if ns.student_found %}
+                                                                <div>{{ ns.student_name }} <small class="text-muted" style="font-size: 0.75rem;">(ID: {{ cluster_data.student_id }})</small></div>
+                                                            {% else %}
+                                                                <div>Студент <small class="text-muted" style="font-size: 0.75rem;">(ID: {{ cluster_data.student_id }})</small></div>
+                                                            {% endif %}
+                                                        </div>
+                                                        <span class="text-danger fw-bold">{{ cluster_data.overall_progress }}%</span>
                                                     </div>
                                                     {% endfor %}
                                                 {% else %}

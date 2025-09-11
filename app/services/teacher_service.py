@@ -108,9 +108,18 @@ class TeacherService:
     def _get_course_summary(self, course_id: int, db: Session) -> Dict[str, Any]:
         """Get summary statistics for a course."""
         try:
+            # Get course information
+            course = db.query(Course).filter(Course.id == course_id).first()
+            course_name = course.name if course else f"Курс #{course_id}"
+            
             # Get total students in course
             total_students = db.query(Student).join(TaskCompletion).filter(
                 TaskCompletion.course_id == course_id
+            ).distinct().count()
+            
+            # Get unique groups in course
+            unique_groups = db.query(Student.group_id).join(TaskCompletion).filter(
+                and_(TaskCompletion.course_id == course_id, Student.group_id.isnot(None))
             ).distinct().count()
             
             # Get total tasks
@@ -149,7 +158,9 @@ class TeacherService:
             
             return {
                 "course_id": course_id,
+                "course_name": course_name,
                 "total_students": total_students,
+                "total_groups": unique_groups,
                 "total_tasks": total_tasks,
                 "attendance_rate": (attended_records / total_attendance_records * 100) if total_attendance_records > 0 else 0,
                 "completion_rate": (completed_tasks / total_completions * 100) if total_completions > 0 else 0,
