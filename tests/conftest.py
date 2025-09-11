@@ -54,6 +54,41 @@ def test_db_session(test_engine, test_session_factory):
         session.close()
 
 
+@pytest.fixture(scope="function")
+def isolated_db_session(test_engine):
+    """Create an isolated database session for each test."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlmodel import SQLModel
+    
+    # Create a new in-memory database for each test
+    import tempfile
+    import os
+    
+    # Create temporary database file
+    fd, temp_db = tempfile.mkstemp(suffix='.db')
+    os.close(fd)
+    
+    # Create engine for this test
+    engine = create_engine(f"sqlite:///{temp_db}", connect_args={"check_same_thread": False})
+    SQLModel.metadata.create_all(bind=engine)
+    
+    # Create session
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session = SessionLocal()
+    
+    try:
+        yield session
+    finally:
+        session.close()
+        engine.dispose()
+        # Clean up temp file
+        try:
+            os.unlink(temp_db)
+        except:
+            pass
+
+
 @pytest.fixture
 def client(test_db_session):
     """Create a test client with database dependency override."""
