@@ -510,8 +510,16 @@ class MLClusterService:
             sorted_clusters = sorted(cluster_performance.items(), key=lambda x: x[1], reverse=True)
             risk_zones = ["A", "B", "C"]
             
+            # Ensure we have at least one cluster in group A if performance is high enough
             for i, (label, performance) in enumerate(sorted_clusters):
-                risk_zone = risk_zones[i] if i < len(risk_zones) else "C"
+                if i == 0 and performance >= 90:  # If best cluster has 90%+ performance, assign to A
+                    risk_zone = "A"
+                elif i == 0:  # Best cluster goes to A
+                    risk_zone = "A"
+                elif i == 1:  # Second best goes to B
+                    risk_zone = "B"
+                else:  # Rest go to C
+                    risk_zone = "C"
                 
                 for student_data in cluster_groups[label]:
                     features = student_data["features"]
@@ -545,10 +553,10 @@ class MLClusterService:
                 completion = features["completion_rate"]
                 overall = features["overall_progress"]
                 
-                # Simple rules
-                if (attendance > 70 and completion > 60 and overall > 70):
+                # Simple rules - more strict for group A
+                if (attendance >= 90 and completion >= 90 and overall >= 90):
                     cluster_label = "A"
-                elif (attendance > 50 or completion > 40 or overall > 50):
+                elif (attendance >= 70 and completion >= 60 and overall >= 70):
                     cluster_label = "B"
                 else:
                     cluster_label = "C"
