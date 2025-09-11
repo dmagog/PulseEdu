@@ -1,0 +1,82 @@
+name: Release Quality Check
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Только для стабильных релизов
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to check (e.g., v0.2.0)'
+        required: true
+        type: string
+
+jobs:
+  release-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run Black (code formatting)
+      run: |
+        echo "🎨 Checking code formatting with Black..."
+        black --check --diff app/ tests/
+        echo "✅ Code formatting is correct"
+    
+    - name: Run isort (import sorting)
+      run: |
+        echo "📦 Checking import sorting with isort..."
+        isort --check-only --diff app/ tests/
+        echo "✅ Import sorting is correct"
+    
+    - name: Run Flake8 (linting)
+      run: |
+        echo "🔍 Running linting with Flake8..."
+        flake8 app/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 app/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        echo "✅ Linting completed"
+    
+    - name: Run MyPy (type checking)
+      run: |
+        echo "🔬 Running type checking with MyPy..."
+        mypy app/ --ignore-missing-imports --no-strict-optional
+        echo "✅ Type checking completed"
+    
+    - name: Run Bandit (security check)
+      run: |
+        echo "🔒 Running security check with Bandit..."
+        bandit -r app/ -ll
+        echo "✅ Security check completed"
+    
+    - name: Run full test suite
+      run: |
+        echo "🧪 Running full test suite..."
+        python -m pytest tests/ --cov=app --cov-report=term-missing -v
+        echo "✅ All tests passed"
+    
+    - name: Release Quality Summary
+      run: |
+        echo "🎉 Release Quality Check Completed Successfully!"
+        echo ""
+        echo "📊 Quality Metrics:"
+        echo "  - Code formatting: ✅ Black"
+        echo "  - Import sorting: ✅ isort"
+        echo "  - Linting: ✅ Flake8"
+        echo "  - Type checking: ✅ MyPy"
+        echo "  - Security: ✅ Bandit"
+        echo "  - Testing: ✅ pytest"
+        echo ""
+        echo "🏷️ Release: ${{ github.ref_name || inputs.version }}"
+        echo "📦 Repository: ${{ github.repository }}"
+        echo "✅ Ready for production deployment!"
