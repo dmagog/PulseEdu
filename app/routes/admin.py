@@ -631,6 +631,7 @@ async def admin_students(
         if course_id:
             # Get students who are enrolled in this course
             from app.models.student import Lesson
+
             query = query.join(Attendance).join(Lesson).filter(Lesson.course_id == course_id).distinct()
 
         # Get total count for pagination

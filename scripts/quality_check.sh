@@ -118,7 +118,7 @@ if [ "$MODE" = "release" ]; then
     fi
 else
     print_status "Running basic test suite..."
-    if python -m pytest tests/test_basic.py tests/test_health.py tests/test_models.py -v; then
+    if python3 -m pytest tests/test_basic.py tests/test_health.py tests/test_models.py -v; then
         print_status "Basic tests passed"
     else
         print_error "Some tests failed"

@@ -3,7 +3,6 @@ Fixed tests for API endpoints with correct expectations.
 """
 
 
-
 class TestHealthEndpoint:
     """Test health check endpoint."""
 

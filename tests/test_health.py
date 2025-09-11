@@ -3,7 +3,6 @@ Tests for health check endpoint.
 """
 
 
-
 def test_health_check(client):
     """Test health check endpoint returns correct response."""
     response = client.get("/healthz")
