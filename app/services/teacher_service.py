@@ -344,6 +344,7 @@ class TeacherService:
                     "id": student.id,
                     "name": student.name,
                     "email": student.email,
+                    "group_id": student.group_id,  # Добавляем номер группы студента
                     "courses": [{"name": course.name} for course in all_courses],
                     "course_ids": [str(course.id) for course in all_courses],
                     "cluster_group": cluster.cluster_label if cluster else None,
@@ -783,7 +784,7 @@ class TeacherService:
             
             # Calculate average completion rate
             total_tasks = len(completions)
-            completed_tasks = sum(1 for c in completions if c.status == "completed")
+            completed_tasks = sum(1 for c in completions if c.status == "Выполнено")
             
             return round((completed_tasks / total_tasks) * 100, 1)
             

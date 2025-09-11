@@ -191,8 +191,8 @@
                                         </td>
                                         <td>
                                             <div>
-                                                <div class="fw-bold">{{ student.name }}</div>
-                                                <small class="text-muted">{{ student.email }}</small>
+                                                <div class="fw-bold">{{ student.name or '' }}</div>
+                                                <small class="text-muted">{{ student.email or '' }}</small>
                                             </div>
                                         </td>
                                         <td>
@@ -201,15 +201,7 @@
                                             {% endfor %}
                                         </td>
                                         <td>
-                                            {% if student.cluster_group == 'A' %}
-                                                <span class="badge bg-success">A (Отличники)</span>
-                                            {% elif student.cluster_group == 'B' %}
-                                                <span class="badge bg-warning">B (Хорошисты)</span>
-                                            {% elif student.cluster_group == 'C' %}
-                                                <span class="badge bg-danger">C (Риск)</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">Не определено</span>
-                                            {% endif %}
+                                            {{ student.group_id or '' }}
                                         </td>
                                         <td>
                                             <div class="progress" style="height: 20px;">
@@ -231,12 +223,14 @@
                                             </div>
                                         </td>
                                         <td>
-                                            {% if student.status == 'excellent' %}
-                                                <span class="badge bg-success">Отличник</span>
-                                            {% elif student.status == 'at_risk' %}
-                                                <span class="badge bg-danger">В зоне риска</span>
+                                            {% if student.cluster_group == 'A' %}
+                                                <span class="badge bg-success">A (Отличники)</span>
+                                            {% elif student.cluster_group == 'B' %}
+                                                <span class="badge bg-warning">B (Хорошисты)</span>
+                                            {% elif student.cluster_group == 'C' %}
+                                                <span class="badge bg-danger">C (Риск)</span>
                                             {% else %}
-                                                <span class="badge bg-primary">Активный</span>
+                                                <span class="badge bg-secondary">Не определено</span>
                                             {% endif %}
                                         </td>
                                         <td>
