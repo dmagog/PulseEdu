@@ -63,6 +63,14 @@ celery_app.conf.beat_schedule = {
         'task': 'worker.cluster_tasks.periodic_cluster_update',
         'schedule': 3600.0,  # Every hour
     },
+    'periodic-ml-cluster-update': {
+        'task': 'worker.cluster_tasks.periodic_ml_cluster_update',
+        'schedule': 7200.0,  # Every 2 hours (less frequent for ML)
+    },
+    'check-quality-alerts': {
+        'task': 'worker.cluster_tasks.check_quality_alerts',
+        'schedule': 1800.0,  # Every 30 minutes
+    },
     'cleanup-expired-sessions': {
         'task': 'worker.auth_tasks.cleanup_expired_sessions',
         'schedule': 1800.0,  # Every 30 minutes
@@ -77,6 +85,7 @@ celery_app.conf.task_routes = {
     
     # Clustering tasks
     'worker.cluster_tasks.*': {'queue': 'cluster'},
+    'cluster.*': {'queue': 'cluster'},
     
     # Beat tasks (periodic)
     'worker.beat_tasks.*': {'queue': 'beat'},

@@ -42,7 +42,7 @@ def upgrade() -> None:
     op.drop_table('llm_call_logs')
     op.drop_index('ix_llm_usage_stats_date', table_name='llm_usage_stats')
     op.drop_table('llm_usage_stats')
-    op.drop_index('ix_student_clusters_student_id_course_id', table_name='student_clusters')
+    # op.drop_index('ix_student_clusters_student_id_course_id', table_name='student_clusters')  # Index doesn't exist
     op.add_column('students', sa.Column('group_id', sa.String(50), nullable=True))
     # ### end Alembic commands ###
 

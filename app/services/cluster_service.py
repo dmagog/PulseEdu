@@ -11,6 +11,7 @@ from app.models.student import Student, Course, Task, Attendance, TaskCompletion
 from app.models.cluster import StudentCluster
 from app.services.metrics_service import MetricsService
 from app.services.config_service import config_service
+from app.services.ml_cluster_service import MLClusterService
 
 logger = logging.getLogger("app.cluster")
 
@@ -20,16 +21,17 @@ class ClusterService:
     
     def __init__(self):
         self.metrics_service = MetricsService()
+        self.ml_cluster_service = MLClusterService()
         self.logger = logger
     
     def cluster_students_by_course(self, course_id: int, db: Session, import_job_id: Optional[str] = None) -> Dict[str, Any]:
         """
-        Cluster students in a course based on performance metrics.
+        Cluster students in a course using ML algorithms.
         
-        Uses KISS approach with 2-3 features:
-        - Attendance rate
-        - Task completion rate
-        - Overall progress
+        Delegates to MLClusterService for advanced clustering with multiple algorithms:
+        - KMeans clustering
+        - DBSCAN clustering  
+        - Agglomerative clustering
         
         Args:
             course_id: Course ID to cluster students for
@@ -40,62 +42,25 @@ class ClusterService:
             Dictionary with clustering results
         """
         try:
-            self.logger.info(f"Starting clustering for course {course_id}")
+            self.logger.info(f"Starting ML clustering for course {course_id}")
             
-            # Get course
-            course = db.query(Course).filter(Course.id == course_id).first()
-            if not course:
-                return {"error": f"Course {course_id} not found"}
+            # Delegate to ML service
+            result = self.ml_cluster_service.cluster_students_by_course(course_id, db, import_job_id)
             
-            # Get students in course
-            students = db.query(Student).join(TaskCompletion).filter(
-                TaskCompletion.course_id == course_id
-            ).distinct().all()
+            if "error" not in result:
+                self.logger.info(f"ML clustering completed for course {course_id}: {result.get('clustered_students', 0)} students clustered using {result.get('algorithm_used', 'Unknown')}")
+            else:
+                self.logger.error(f"ML clustering failed for course {course_id}: {result['error']}")
             
-            if not students:
-                return {"error": f"No students found in course {course_id}"}
-            
-            # Collect features for clustering
-            student_features = []
-            for student in students:
-                features = self._extract_student_features(student.id, course_id, db)
-                if features:
-                    student_features.append({
-                        "student_id": student.id,
-                        "features": features
-                    })
-            
-            if not student_features:
-                return {"error": "No valid student features found"}
-            
-            # Perform KISS clustering
-            clusters = self._kiss_clustering(student_features)
-            
-            # Save cluster assignments
-            saved_clusters = self._save_cluster_assignments(
-                course_id, clusters, db, import_job_id
-            )
-            
-            result = {
-                "course_id": course_id,
-                "course_name": course.name,
-                "total_students": len(students),
-                "clustered_students": len(saved_clusters),
-                "clusters": self._summarize_clusters(clusters),
-                "import_job_id": import_job_id,
-                "clustered_at": config_service.now()
-            }
-            
-            self.logger.info(f"Clustering completed for course {course_id}: {len(saved_clusters)} students clustered")
             return result
             
         except Exception as e:
-            self.logger.error(f"Error clustering students for course {course_id}: {e}")
+            self.logger.error(f"Error in ML clustering for course {course_id}: {e}")
             return {"error": str(e)}
     
     def cluster_all_courses(self, db: Session, import_job_id: Optional[str] = None) -> Dict[str, Any]:
         """
-        Cluster students for all courses.
+        Cluster students for all courses using ML algorithms.
         
         Args:
             db: Database session
@@ -105,36 +70,20 @@ class ClusterService:
             Dictionary with clustering results for all courses
         """
         try:
-            self.logger.info("Starting clustering for all courses")
+            self.logger.info("Starting ML clustering for all courses")
             
-            # Get all courses
-            courses = db.query(Course).all()
+            # Delegate to ML service
+            result = self.ml_cluster_service.cluster_all_courses(db, import_job_id)
             
-            results = []
-            total_students = 0
-            total_clustered = 0
+            if "error" not in result:
+                self.logger.info(f"ML clustering completed for all courses: {result.get('total_clustered', 0)} students clustered across {result.get('successful_courses', 0)} courses")
+            else:
+                self.logger.error(f"ML clustering failed for all courses: {result['error']}")
             
-            for course in courses:
-                course_result = self.cluster_students_by_course(course.id, db, import_job_id)
-                if "error" not in course_result:
-                    results.append(course_result)
-                    total_students += course_result["total_students"]
-                    total_clustered += course_result["clustered_students"]
-                else:
-                    self.logger.warning(f"Failed to cluster course {course.id}: {course_result['error']}")
-            
-            return {
-                "total_courses": len(courses),
-                "successful_courses": len(results),
-                "total_students": total_students,
-                "total_clustered": total_clustered,
-                "course_results": results,
-                "import_job_id": import_job_id,
-                "clustered_at": config_service.now()
-            }
+            return result
             
         except Exception as e:
-            self.logger.error(f"Error clustering all courses: {e}")
+            self.logger.error(f"Error in ML clustering for all courses: {e}")
             return {"error": str(e)}
     
     def get_student_cluster(self, student_id: str, course_id: int, db: Session) -> Optional[StudentCluster]:
@@ -184,6 +133,23 @@ class ClusterService:
         except Exception as e:
             self.logger.error(f"Error getting course clusters: {e}")
             return []
+    
+    def get_clustering_quality_report(self, course_id: int, db: Session) -> Dict[str, Any]:
+        """
+        Get quality report for clustering results.
+        
+        Args:
+            course_id: Course ID
+            db: Database session
+            
+        Returns:
+            Dictionary with clustering quality metrics
+        """
+        try:
+            return self.ml_cluster_service.get_clustering_quality_report(course_id, db)
+        except Exception as e:
+            self.logger.error(f"Error getting clustering quality report: {e}")
+            return {"error": str(e)}
     
     def _extract_student_features(self, student_id: str, course_id: int, db: Session) -> Optional[Dict[str, float]]:
         """Extract features for clustering a student."""

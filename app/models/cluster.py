@@ -32,6 +32,9 @@ class StudentCluster(SQLModel, table=True):
     # Import job that triggered this clustering
     import_job_id: Optional[str] = Field(default=None, index=True, description="Import job that triggered clustering")
     
+    # ML metadata (algorithm used, quality metrics, etc.)
+    ml_metadata: Optional[str] = Field(default=None, description="JSON metadata about ML clustering algorithm and quality metrics")
+    
     class Config:
         indexes = [
             ("student_id", "course_id"),  # Composite index for fast lookups
