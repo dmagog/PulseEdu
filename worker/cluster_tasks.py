@@ -10,7 +10,7 @@ from app.services.cluster_service import ClusterService
 from app.services.ml_cluster_service import MLClusterService
 from app.services.ml_monitoring_service import MLMonitoringService
 from app.services.config_service import config_service
-from worker.celery_app import celery_app
+from worker.celery_cluster import celery_app
 
 logger = logging.getLogger("worker.cluster_tasks")
 cluster_service = ClusterService()

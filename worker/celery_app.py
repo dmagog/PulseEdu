@@ -10,7 +10,6 @@ celery_app = Celery(
     broker=os.getenv("RABBITMQ_URL", "amqp://pulseedu:pulseedu@localhost:5672//"),
     backend=None,  # Disable result backend for now
     include=[
-        "worker.tasks",
         "worker.beat_tasks",
         "worker.cluster_tasks",
         "worker.email_tasks",

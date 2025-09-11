@@ -35,9 +35,9 @@ class MLClusterService:
         self.models = {}
         self.cluster_quality_metrics = {}
         
-        # Predefined optimal parameters based on testing
-        self.optimal_algorithm = "KMeans"
-        self.optimal_params = {
+        # Unified ML clustering solution - KMeans with optimal parameters
+        self.algorithm = "KMeans"
+        self.params = {
             "n_clusters": 3,
             "random_state": 42,
             "n_init": 10,
@@ -47,12 +47,12 @@ class MLClusterService:
     
     def cluster_students_by_course(self, course_id: int, db: Session, import_job_id: Optional[str] = None) -> Dict[str, Any]:
         """
-        Cluster students in a course using ML algorithms.
+        Cluster students in a course using unified ML solution.
         
-        Uses multiple algorithms and selects the best one based on quality metrics:
-        - KMeans clustering
-        - DBSCAN clustering  
-        - Agglomerative clustering
+        Uses KMeans clustering with optimal parameters:
+        - n_clusters=3 for risk zones (A, B, C)
+        - StandardScaler for feature normalization
+        - Quality metrics tracking and monitoring
         
         Args:
             course_id: Course ID to cluster students for
@@ -436,10 +436,10 @@ class MLClusterService:
     
     def _ml_clustering(self, student_features: List[Dict[str, Any]]) -> Tuple[Dict[str, List[Dict[str, Any]]], str, Dict[str, float]]:
         """
-        Perform ML clustering using multiple algorithms and select the best one.
+        Perform ML clustering using unified KMeans solution.
         
         Returns:
-            Tuple of (best_clusters, best_algorithm, quality_metrics)
+            Tuple of (clusters, algorithm_name, quality_metrics)
         """
         try:
             # Prepare feature matrix
@@ -449,82 +449,36 @@ class MLClusterService:
             # Normalize features
             feature_matrix_scaled = self.scaler.fit_transform(feature_matrix)
             
-            # Define algorithms and their parameters
-            algorithms = {
-                "KMeans": {
-                    "model": KMeans,
-                    "params": {"n_clusters": [2, 3, 4], "random_state": [42], "n_init": [10]}
-                },
-                "DBSCAN": {
-                    "model": DBSCAN,
-                    "params": {"eps": [0.3, 0.5, 0.7], "min_samples": [2, 3, 4]}
-                },
-                "Agglomerative": {
-                    "model": AgglomerativeClustering,
-                    "params": {"n_clusters": [2, 3, 4], "linkage": ["ward", "complete", "average"]}
+            # Use unified KMeans solution
+            model = KMeans(**self.params)
+            cluster_labels = model.fit_predict(feature_matrix_scaled)
+            
+            # Calculate quality metrics
+            unique_labels = set(cluster_labels)
+            if len(unique_labels) > 1:
+                silhouette = silhouette_score(feature_matrix_scaled, cluster_labels)
+                calinski_harabasz = calinski_harabasz_score(feature_matrix_scaled, cluster_labels)
+                
+                # Combined score (weighted average)
+                combined_score = 0.7 * silhouette + 0.3 * (calinski_harabasz / 1000)  # Normalize CH score
+                
+                quality_metrics = {
+                    "silhouette_score": silhouette,
+                    "calinski_harabasz_score": calinski_harabasz,
+                    "combined_score": combined_score,
+                    "n_clusters": len(unique_labels),
+                    "parameters": self.params
                 }
-            }
-            
-            best_score = -1
-            best_clusters = None
-            best_algorithm = "KMeans"
-            best_quality_metrics = {}
-            
-            # Try each algorithm
-            for algo_name, algo_config in algorithms.items():
-                try:
-                    model_class = algo_config["model"]
-                    param_grid = ParameterGrid(algo_config["params"])
-                    
-                    for params in param_grid:
-                        try:
-                            # Create and fit model
-                            model = model_class(**params)
-                            cluster_labels = model.fit_predict(feature_matrix_scaled)
-                            
-                            # Skip if all points are in one cluster or noise
-                            unique_labels = set(cluster_labels)
-                            if len(unique_labels) < 2 or (algo_name == "DBSCAN" and -1 in unique_labels and len(unique_labels) == 2):
-                                continue
-                            
-                            # Calculate quality metrics
-                            if len(unique_labels) > 1:
-                                silhouette = silhouette_score(feature_matrix_scaled, cluster_labels)
-                                calinski_harabasz = calinski_harabasz_score(feature_matrix_scaled, cluster_labels)
-                                
-                                # Combined score (weighted average)
-                                combined_score = 0.7 * silhouette + 0.3 * (calinski_harabasz / 1000)  # Normalize CH score
-                                
-                                if combined_score > best_score:
-                                    best_score = combined_score
-                                    best_algorithm = f"{algo_name}_{params}"
-                                    best_quality_metrics = {
-                                        "silhouette_score": silhouette,
-                                        "calinski_harabasz_score": calinski_harabasz,
-                                        "combined_score": combined_score,
-                                        "n_clusters": len(unique_labels),
-                                        "parameters": params
-                                    }
-                                    
-                                    # Convert to our cluster format
-                                    best_clusters = self._convert_to_cluster_format(
-                                        student_features, cluster_labels, feature_matrix, feature_names
-                                    )
-                                    
-                        except Exception as e:
-                            self.logger.warning(f"Error with {algo_name} parameters {params}: {e}")
-                            continue
-                            
-                except Exception as e:
-                    self.logger.warning(f"Error with algorithm {algo_name}: {e}")
-                    continue
-            
-            # Fallback to simple clustering if no good solution found
-            if best_clusters is None or best_score < 0.1:
-                self.logger.warning("No good ML clustering found, using simple fallback")
+                
+                # Convert to our cluster format
+                clusters = self._convert_to_cluster_format(
+                    student_features, cluster_labels, feature_matrix, feature_names
+                )
+                
+                return clusters, self.algorithm, quality_metrics
+            else:
+                self.logger.warning("KMeans produced only one cluster, using simple fallback")
                 return self._simple_clustering_fallback(student_features, None, None, None)
-            
-            return best_clusters, best_algorithm, best_quality_metrics
             
         except Exception as e:
             self.logger.error(f"Error in ML clustering: {e}")
@@ -532,32 +486,45 @@ class MLClusterService:
     
     def _convert_to_cluster_format(self, student_features: List[Dict[str, Any]], cluster_labels: np.ndarray, 
                                  feature_matrix: np.ndarray, feature_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:
-        """Convert ML clustering results to our standard format."""
+        """Convert ML clustering results to our standard format with A, B, C risk zones."""
         try:
-            clusters = {}
+            clusters = {"A": [], "B": [], "C": []}
             
+            # Group students by cluster label
+            cluster_groups = {}
             for i, (student_data, label) in enumerate(zip(student_features, cluster_labels)):
-                # Convert numeric label to letter (A, B, C, etc.)
-                if label == -1:  # DBSCAN noise
-                    cluster_label = "C"
-                else:
-                    cluster_label = chr(65 + (label % 26))  # A, B, C, ...
+                if label not in cluster_groups:
+                    cluster_groups[label] = []
+                cluster_groups[label].append(student_data)
+            
+            # Calculate average performance for each cluster to assign risk zones
+            cluster_performance = {}
+            for label, students in cluster_groups.items():
+                if students:
+                    avg_attendance = sum(s["features"]["attendance_rate"] for s in students) / len(students)
+                    avg_completion = sum(s["features"]["completion_rate"] for s in students) / len(students)
+                    avg_progress = sum(s["features"]["overall_progress"] for s in students) / len(students)
+                    cluster_performance[label] = (avg_attendance + avg_completion + avg_progress) / 3
+            
+            # Sort clusters by performance and assign risk zones
+            sorted_clusters = sorted(cluster_performance.items(), key=lambda x: x[1], reverse=True)
+            risk_zones = ["A", "B", "C"]
+            
+            for i, (label, performance) in enumerate(sorted_clusters):
+                risk_zone = risk_zones[i] if i < len(risk_zones) else "C"
                 
-                if cluster_label not in clusters:
-                    clusters[cluster_label] = []
-                
-                # Calculate confidence based on distance to cluster center
-                features = student_data["features"]
-                confidence = min(1.0, max(0.0, (features["attendance_rate"] + features["completion_rate"] + features["overall_progress"]) / 300))
-                
-                clusters[cluster_label].append({
-                    "student_id": student_data["student_id"],
-                    "attendance_rate": features["attendance_rate"],
-                    "completion_rate": features["completion_rate"],
-                    "overall_progress": features["overall_progress"],
-                    "cluster_score": confidence,
-                    "ml_features": features
-                })
+                for student_data in cluster_groups[label]:
+                    features = student_data["features"]
+                    confidence = min(1.0, max(0.0, (features["attendance_rate"] + features["completion_rate"] + features["overall_progress"]) / 300))
+                    
+                    clusters[risk_zone].append({
+                        "student_id": student_data["student_id"],
+                        "attendance_rate": features["attendance_rate"],
+                        "completion_rate": features["completion_rate"],
+                        "overall_progress": features["overall_progress"],
+                        "cluster_score": confidence,
+                        "ml_features": features
+                    })
             
             return clusters
             

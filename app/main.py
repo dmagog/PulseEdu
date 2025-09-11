@@ -20,6 +20,7 @@ from app.routes.rop import router as rop_router
 from app.routes.llm_routes import router as llm_router
 from app.routes.course import router as course_router
 from app.routes.ml_monitoring import router as ml_monitoring_router
+from app.routes.cluster import router as cluster_router
 
 # Request ID context variable
 request_id_var: ContextVar[str] = ContextVar("request_id", default="")
@@ -33,7 +34,7 @@ class RequestIDFilter(logging.Filter):
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s level=%(levelname)s logger=%(name)s msg=%(message)s request_id=%(request_id)s"
+    format="%(asctime)s level=%(levelname)s logger=%(name)s msg=%(message)s"
 )
 
 # Add filter to root logger
@@ -65,14 +66,14 @@ async def add_request_id(request: Request, call_next):
     # Log request start
     logger = logging.getLogger("app.request")
     logger.info(
-        f"Request started method={request.method} url={str(request.url)} client_ip={request.client.host if request.client else 'unknown'}"
+        f"Request started method={request.method} url={str(request.url)} client_ip={request.client.host if request.client else 'unknown'} request_id={request_id}"
     )
     
     response = await call_next(request)
     
     # Log request completion
     logger.info(
-        f"Request completed status_code={response.status_code}"
+        f"Request completed status_code={response.status_code} request_id={request_id}"
     )
     
     return response
@@ -89,5 +90,6 @@ app.include_router(rop_router, tags=["rop"])
 app.include_router(llm_router, tags=["llm"])
 app.include_router(course_router, tags=["course"])
 app.include_router(ml_monitoring_router, tags=["ml-monitoring"])
+app.include_router(cluster_router, tags=["cluster"])
 
 # Root endpoint is now handled by home_router

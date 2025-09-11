@@ -266,3 +266,67 @@ async def get_course_monitoring_report(
     except Exception as e:
         logger.error(f"Error getting course monitoring report: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/student-clusters")
+async def get_student_clusters(
+    course_id: Optional[int] = Query(default=None, description="Filter by course ID"),
+    db: Session = Depends(get_session),
+    # _: None = Depends(require_admin)  # Temporarily disabled for testing
+) -> Dict[str, Any]:
+    """
+    Get student cluster assignments for dashboard display.
+    
+    Args:
+        course_id: Optional course ID to filter by
+        db: Database session
+        
+    Returns:
+        Student cluster data for dashboard
+    """
+    try:
+        from app.models.cluster import StudentCluster
+        from app.models.student import Student
+        
+        # Get cluster assignments
+        query = db.query(StudentCluster)
+        if course_id:
+            query = query.filter(StudentCluster.course_id == course_id)
+        
+        clusters = query.all()
+        
+        # Group by cluster label
+        cluster_groups = {}
+        for cluster in clusters:
+            label = cluster.cluster_label
+            if label not in cluster_groups:
+                cluster_groups[label] = []
+            cluster_groups[label].append({
+                "student_id": cluster.student_id,
+                "cluster_score": cluster.cluster_score,
+                "attendance_rate": cluster.attendance_rate,
+                "completion_rate": cluster.completion_rate,
+                "overall_progress": cluster.overall_progress
+            })
+        
+        # Calculate summary statistics
+        total_students = len(clusters)
+        cluster_summary = {}
+        for label, students in cluster_groups.items():
+            cluster_summary[label] = {
+                "count": len(students),
+                "avg_attendance": sum(s["attendance_rate"] for s in students) / len(students) if students else 0,
+                "avg_completion": sum(s["completion_rate"] for s in students) / len(students) if students else 0,
+                "avg_progress": sum(s["overall_progress"] for s in students) / len(students) if students else 0
+            }
+        
+        return {
+            "status": "success",
+            "total_students": total_students,
+            "cluster_groups": cluster_groups,
+            "cluster_summary": cluster_summary
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting student clusters: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

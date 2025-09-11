@@ -8,7 +8,7 @@ from app.database.session import get_db_session
 from app.services.email_service import EmailService
 from app.models.import_models import ImportJob
 from app.models.user import User
-from worker.celery_app import celery_app
+from worker.celery_email import celery_app
 
 logger = logging.getLogger("worker.email_tasks")
 email_service = EmailService()

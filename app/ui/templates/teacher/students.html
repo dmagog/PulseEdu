@@ -15,6 +15,98 @@
     <!-- Внутренняя навигация -->
     {% include "teacher/_navigation.html" %}
 
+    <!-- Risk Zones Dashboard -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                        Дашборд по зонам риска студентов
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Cluster Distribution -->
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Распределение по кластерам</h6>
+                                    <div id="clusterChart" style="height: 200px;">
+                                        <canvas id="clusterChartCanvas"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Risk Summary -->
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Сводка по рискам</h6>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Высокий риск:</span>
+                                            <span class="badge bg-danger" id="high-risk-count">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Средний риск:</span>
+                                            <span class="badge bg-warning" id="medium-risk-count">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Низкий риск:</span>
+                                            <span class="badge bg-success" id="low-risk-count">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Не определено:</span>
+                                            <span class="badge bg-secondary" id="undefined-risk-count">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quality Metrics -->
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Качество кластеризации</h6>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Алгоритм:</span>
+                                            <span class="badge bg-primary" id="clustering-algorithm">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Качество:</span>
+                                            <span class="badge" id="clustering-quality">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Последнее обновление:</span>
+                                            <small class="text-muted" id="last-update">-</small>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="refreshClusteringData()">
+                                        <i class="bi bi-arrow-clockwise"></i> Обновить
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Student Filters -->
     <div class="row mb-4">
         <div class="col-12">
@@ -50,7 +142,7 @@
                         </div>
                         <div class="col-md-3">
                             <button class="btn btn-primary" onclick="applyFilters()">
-                                <i class="bi bi-funnel"></i> Применить фильтры
+                                <i class="bi bi-funnel"></i> Применить
                             </button>
                             <button class="btn btn-outline-secondary" onclick="exportStudents()">
                                 <i class="bi bi-download"></i> Экспорт
@@ -95,17 +187,15 @@
                                         data-name="{{ student.name|lower }}"
                                         data-id="{{ student.id|lower }}">
                                         <td>
-                                            <strong>{{ student.id }}</strong>
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-person-circle text-primary me-2"></i>
+                                                <strong>{{ student.id }}</strong>
+                                            </div>
                                         </td>
                                         <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar me-2">
-                                                    <i class="bi bi-person-circle text-primary" style="font-size: 1.5rem;"></i>
-                                                </div>
-                                                <div>
-                                                    <div class="fw-bold">{{ student.name }}</div>
-                                                    <small class="text-muted">{{ student.email }}</small>
-                                                </div>
+                                            <div>
+                                                <div class="fw-bold">{{ student.name }}</div>
+                                                <small class="text-muted">{{ student.email }}</small>
                                             </div>
                                         </td>
                                         <td>
@@ -223,7 +313,167 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    let clusterChart = null;
+    let clusteringData = {};
+
+    // Загрузка данных кластеризации при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        loadClusteringData();
+        initializeClusterChart();
+    });
+
+    // Загрузка данных кластеризации
+    async function loadClusteringData() {
+        try {
+            // Получаем данные о кластеризации студентов
+            const response = await fetch('/api/ml-monitoring/student-clusters');
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                clusteringData = data;
+                updateRiskDashboard();
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки данных кластеризации:', error);
+        }
+    }
+
+    // Обновление дашборда рисков
+    function updateRiskDashboard() {
+        if (!clusteringData || !clusteringData.cluster_summary) {
+            console.log('Нет данных кластеризации');
+            return;
+        }
+        
+        // Получаем данные из API
+        const clusterSummary = clusteringData.cluster_summary;
+        const riskCounts = {
+            high: clusterSummary.C ? clusterSummary.C.count : 0,
+            medium: clusterSummary.B ? clusterSummary.B.count : 0,
+            low: clusterSummary.A ? clusterSummary.A.count : 0,
+            undefined: 0
+        };
+
+        // Обновление счетчиков
+        document.getElementById('high-risk-count').textContent = riskCounts.high;
+        document.getElementById('medium-risk-count').textContent = riskCounts.medium;
+        document.getElementById('low-risk-count').textContent = riskCounts.low;
+        document.getElementById('undefined-risk-count').textContent = riskCounts.undefined;
+
+        // Обновление информации о кластеризации
+        if (clusteringData.algorithms && Object.keys(clusteringData.algorithms).length > 0) {
+            const algorithm = Object.keys(clusteringData.algorithms)[0];
+            const stats = clusteringData.algorithms[algorithm];
+            
+            document.getElementById('clustering-algorithm').textContent = algorithm;
+            
+            const quality = stats.avg_silhouette_score;
+            const qualityElement = document.getElementById('clustering-quality');
+            qualityElement.textContent = quality.toFixed(3);
+            
+            if (quality >= 0.5) {
+                qualityElement.className = 'badge bg-success';
+            } else if (quality >= 0.3) {
+                qualityElement.className = 'badge bg-warning';
+            } else {
+                qualityElement.className = 'badge bg-danger';
+            }
+            
+            document.getElementById('last-update').textContent = new Date(stats.last_used).toLocaleString('ru-RU');
+        }
+
+        // Обновление графика
+        updateClusterChart(riskCounts);
+    }
+
+    // Инициализация графика кластеров
+    function initializeClusterChart() {
+        const ctx = document.getElementById('clusterChartCanvas').getContext('2d');
+        clusterChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Низкий риск (A)', 'Средний риск (B)', 'Высокий риск (C)', 'Не определено'],
+                datasets: [{
+                    data: [0, 0, 0, 0],
+                    backgroundColor: [
+                        '#28a745', // Зеленый для низкого риска
+                        '#ffc107', // Желтый для среднего риска
+                        '#dc3545', // Красный для высокого риска
+                        '#6c757d'  // Серый для неопределенного
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 10,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Обновление графика кластеров
+    function updateClusterChart(riskCounts) {
+        if (clusterChart) {
+            clusterChart.data.datasets[0].data = [
+                riskCounts.low,
+                riskCounts.medium,
+                riskCounts.high,
+                riskCounts.undefined
+            ];
+            clusterChart.update();
+        }
+    }
+
+    // Обновление данных кластеризации
+    async function refreshClusteringData() {
+        try {
+            // Показываем индикатор загрузки
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split"></i> Обновление...';
+            button.disabled = true;
+            
+            // Запускаем пересчет кластеризации
+            const response = await fetch('/api/cluster/trigger-clustering', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ force_update: true })
+            });
+            
+            if (response.ok) {
+                // Ждем немного и обновляем данные
+                setTimeout(() => {
+                    loadClusteringData();
+                    location.reload(); // Перезагружаем страницу для обновления данных студентов
+                }, 2000);
+            } else {
+                alert('Ошибка при запуске пересчета кластеризации');
+            }
+        } catch (error) {
+            console.error('Ошибка обновления кластеризации:', error);
+            alert('Ошибка при обновлении данных кластеризации');
+        } finally {
+            // Восстанавливаем кнопку
+            const button = event.target;
+            button.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Обновить';
+            button.disabled = false;
+        }
+    }
+
     function applyFilters() {
         const courseFilter = document.getElementById('courseFilter').value;
         const groupFilter = document.getElementById('groupFilter').value;
@@ -270,5 +520,26 @@
     function exportStudents() {
         alert('Функция экспорта студентов будет реализована в следующих итерациях');
     }
+
+    // Сортировка студентов по прогрессу (убывание)
+    function sortStudentsByProgress() {
+        const tbody = document.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        rows.sort((a, b) => {
+            const progressA = parseFloat(a.querySelector('.progress-bar').textContent) || 0;
+            const progressB = parseFloat(b.querySelector('.progress-bar').textContent) || 0;
+            return progressB - progressA; // Убывание
+        });
+        
+        // Очищаем tbody и добавляем отсортированные строки
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Применяем сортировку при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(sortStudentsByProgress, 1000); // Небольшая задержка для загрузки данных
+    });
 </script>
 {% endblock %}

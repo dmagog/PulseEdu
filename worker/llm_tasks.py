@@ -11,7 +11,7 @@ from app.database.session import get_session
 # from app.services.llm_provider import LLMProvider
 from app.services.student_service import StudentService
 from app.services.metrics_service import MetricsService
-from worker.celery_app import celery_app
+from worker.celery_llm import celery_app
 
 logger = logging.getLogger("worker.llm_tasks")
 # llm_provider = LLMProvider()

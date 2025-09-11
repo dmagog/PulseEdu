@@ -80,7 +80,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
-    command: celery -A worker.celery_app worker --loglevel=info --queues=ingest --concurrency=2 --hostname=worker_ingest@%h
+    command: celery -A worker.celery_ingest worker --loglevel=info --queues=ingest --concurrency=2 --hostname=worker_ingest@%h
 
   # Celery worker for clustering
   worker_cluster:
@@ -100,7 +100,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
-    command: celery -A worker.celery_app worker --loglevel=info --queues=cluster --concurrency=1 --hostname=worker_cluster@%h
+    command: celery -A worker.celery_cluster worker --loglevel=info --queues=cluster --concurrency=1 --hostname=worker_cluster@%h
 
   # Celery worker for beat tasks (periodic)
   worker_beat:
@@ -120,7 +120,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
-    command: celery -A worker.celery_app worker --loglevel=info --queues=beat --concurrency=1 --hostname=worker_beat@%h
+    command: celery -A worker.celery_beat worker --loglevel=info --queues=beat --concurrency=1 --hostname=worker_beat@%h
 
   # Celery worker for auth tasks (future)
   worker_auth:
@@ -140,7 +140,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
-    command: celery -A worker.celery_app worker --loglevel=info --queues=auth --concurrency=1 --hostname=worker_auth@%h
+    command: celery -A worker.celery_auth worker --loglevel=info --queues=auth --concurrency=1 --hostname=worker_auth@%h
 
   # Celery worker for email tasks (future)
   worker_email:
@@ -160,7 +160,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
-    command: celery -A worker.celery_app worker --loglevel=info --queues=email --concurrency=1 --hostname=worker_email@%h
+    command: celery -A worker.celery_email worker --loglevel=info --queues=email --concurrency=1 --hostname=worker_email@%h
 
   # Celery worker for LLM tasks (future)
   worker_llm:
@@ -180,7 +180,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
-    command: celery -A worker.celery_app worker --loglevel=info --queues=llm --concurrency=1 --hostname=worker_llm@%h
+    command: celery -A worker.celery_llm worker --loglevel=info --queues=llm --concurrency=1 --hostname=worker_llm@%h
 
   # Celery Beat scheduler
   beat:

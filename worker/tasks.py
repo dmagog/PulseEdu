@@ -12,7 +12,7 @@ from app.database.session import get_db_session
 from app.models.import_models import ImportJob, ImportErrorLog
 from app.services.import_service import ImportService
 
-from worker.celery_app import celery_app
+from worker.celery_ingest import celery_app
 
 logger = logging.getLogger("worker.tasks")
 

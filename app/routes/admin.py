@@ -1018,6 +1018,25 @@ async def admin_courses(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+@router.get("/ml-monitoring", response_class=HTMLResponse)
+async def admin_ml_monitoring(request: Request) -> HTMLResponse:
+    """
+    Admin ML monitoring page.
+    
+    Args:
+        request: FastAPI request object
+        
+    Returns:
+        HTML response with ML monitoring dashboard
+    """
+    logger.info("Admin ML monitoring page requested")
+    
+    return templates.TemplateResponse("admin/ml_monitoring.html", {
+        "request": request,
+        "title": "Мониторинг ML-кластеризации"
+    })
+
+
 @router.get("/settings", response_class=HTMLResponse)
 async def admin_settings(
     request: Request,

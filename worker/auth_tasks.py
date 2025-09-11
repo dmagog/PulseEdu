@@ -16,7 +16,7 @@ from app.services.session_service import session_service
 logger = logging.getLogger("worker.auth")
 
 # Import celery app
-from worker.celery_app import celery_app
+from worker.celery_auth import celery_app
 
 
 @celery_app.task(bind=True, name='worker.auth_tasks.log_auth_attempt')

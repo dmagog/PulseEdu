@@ -13,7 +13,7 @@ from app.services.metrics_service import MetricsService
 from app.services.config_service import config_service
 from app.services.llm_monitoring_service import LLMMonitoringService
 
-from worker.celery_app import celery_app
+from worker.celery_beat import celery_app
 
 logger = logging.getLogger("worker.beat_tasks")
 metrics_service = MetricsService()

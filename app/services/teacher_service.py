@@ -291,7 +291,7 @@ class TeacherService:
 
     def get_teacher_students(self, db: Session) -> List[Dict[str, Any]]:
         """
-        Get teacher students data.
+        Get teacher students data with clustering information.
         
         Args:
             db: Database session
@@ -300,10 +300,55 @@ class TeacherService:
             List of student data
         """
         try:
-            self.logger.info("Getting teacher students")
+            self.logger.info("Getting teacher students with clustering data")
             
-            # Mock students data
-            students = [
+            # Get all students with their cluster assignments
+            students_query = db.query(Student).all()
+            students = []
+            
+            for student in students_query:
+                # Get cluster assignment for this student
+                cluster = db.query(StudentCluster).filter(
+                    StudentCluster.student_id == student.id
+                ).first()
+                
+                # Get student's courses
+                student_courses = db.query(Course).join(Attendance).filter(
+                    Attendance.student_id == student.id
+                ).distinct().all()
+                
+                # Calculate progress and attendance
+                progress = self._calculate_student_progress(student.id, db)
+                attendance = self._calculate_student_attendance(student.id, db)
+                
+                # Determine status based on progress and attendance
+                if progress >= 80 and attendance >= 85:
+                    status = "excellent"
+                elif progress < 50 or attendance < 60:
+                    status = "at_risk"
+                else:
+                    status = "active"
+                
+                student_data = {
+                    "id": student.id,
+                    "name": student.name,
+                    "email": student.email,
+                    "courses": [{"name": course.name} for course in student_courses],
+                    "course_ids": [str(course.id) for course in student_courses],
+                    "cluster_group": cluster.cluster_label if cluster else None,
+                    "overall_progress": progress,
+                    "attendance_rate": attendance,
+                    "status": status
+                }
+                
+                students.append(student_data)
+            
+            return students
+            
+        except Exception as e:
+            self.logger.error(f"Error getting teacher students: {e}")
+            # Fallback to mock data if there's an error
+            return [
                 {
                     "id": "01",
                     "name": "Иванов Иван Иванович",
@@ -338,12 +383,6 @@ class TeacherService:
                     "status": "at_risk"
                 }
             ]
-            
-            return students
-            
-        except Exception as e:
-            self.logger.error(f"Error getting teacher students: {e}")
-            return []
 
     def get_teacher_analytics(self, db: Session) -> Dict[str, Any]:
         """
@@ -719,6 +758,48 @@ class TeacherService:
         except Exception as e:
             self.logger.error(f"Error counting overdue tasks: {e}")
             return 0
+    
+    def _calculate_student_progress(self, student_id: str, db: Session) -> float:
+        """Calculate overall progress for a student."""
+        try:
+            # Get all task completions for the student
+            completions = db.query(TaskCompletion).filter(
+                TaskCompletion.student_id == student_id
+            ).all()
+            
+            if not completions:
+                return 0.0
+            
+            # Calculate average completion rate
+            total_tasks = len(completions)
+            completed_tasks = sum(1 for c in completions if c.status == "completed")
+            
+            return round((completed_tasks / total_tasks) * 100, 1)
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating student progress: {e}")
+            return 0.0
+    
+    def _calculate_student_attendance(self, student_id: str, db: Session) -> float:
+        """Calculate attendance rate for a student."""
+        try:
+            # Get all attendance records for the student
+            attendances = db.query(Attendance).filter(
+                Attendance.student_id == student_id
+            ).all()
+            
+            if not attendances:
+                return 0.0
+            
+            # Calculate attendance rate
+            total_lessons = len(attendances)
+            attended_lessons = sum(1 for a in attendances if a.status == "present")
+            
+            return round((attended_lessons / total_lessons) * 100, 1)
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating student attendance: {e}")
+            return 0.0
     
     def _get_risk_factors(self, course_data: Dict[str, Any], progress: Dict[str, Any]) -> List[str]:
         """Get list of risk factors for a student."""

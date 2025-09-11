@@ -1,5 +1,5 @@
 """
-Cluster service for student clustering based on performance metrics.
+Cluster service for student clustering using ML algorithms.
 """
 import logging
 from datetime import datetime
@@ -17,7 +17,7 @@ logger = logging.getLogger("app.cluster")
 
 
 class ClusterService:
-    """Service for clustering students based on performance metrics."""
+    """Service for clustering students using ML algorithms through specialized worker."""
     
     def __init__(self):
         self.metrics_service = MetricsService()
@@ -28,10 +28,10 @@ class ClusterService:
         """
         Cluster students in a course using ML algorithms.
         
-        Delegates to MLClusterService for advanced clustering with multiple algorithms:
-        - KMeans clustering
-        - DBSCAN clustering  
-        - Agglomerative clustering
+        Uses the unified ML clustering solution with optimal parameters:
+        - KMeans clustering with n_clusters=3
+        - StandardScaler for feature normalization
+        - Quality metrics tracking and monitoring
         
         Args:
             course_id: Course ID to cluster students for
