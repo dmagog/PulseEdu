@@ -226,12 +226,17 @@
                                                 </h6>
                                             </div>
                                             <div class="card-body">
-                                                {% set group_a_students = students | selectattr('status', 'equalto', 'good') | list %}
-                                                {% if group_a_students %}
-                                                    {% for student_data in group_a_students %}
+                                                {% if cluster_groups.get('A') %}
+                                                    {% for cluster_data in cluster_groups['A'] %}
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <small>{{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})</small>
-                                                        <span class="badge bg-success">{{ student_data.overall_progress }}%</span>
+                                                        <small>
+                                                            {% for student_data in students %}
+                                                                {% if student_data.student.id == cluster_data.student_id %}
+                                                                    {{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </small>
+                                                        <span class="badge bg-success">{{ cluster_data.overall_progress }}%</span>
                                                     </div>
                                                     {% endfor %}
                                                 {% else %}
@@ -250,12 +255,17 @@
                                                 </h6>
                                             </div>
                                             <div class="card-body">
-                                                {% set group_b_students = students | selectattr('status', 'equalto', 'medium_risk') | list %}
-                                                {% if group_b_students %}
-                                                    {% for student_data in group_b_students %}
+                                                {% if cluster_groups.get('B') %}
+                                                    {% for cluster_data in cluster_groups['B'] %}
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <small>{{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})</small>
-                                                        <span class="badge bg-warning">{{ student_data.overall_progress }}%</span>
+                                                        <small>
+                                                            {% for student_data in students %}
+                                                                {% if student_data.student.id == cluster_data.student_id %}
+                                                                    {{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </small>
+                                                        <span class="badge bg-warning">{{ cluster_data.overall_progress }}%</span>
                                                     </div>
                                                     {% endfor %}
                                                 {% else %}
@@ -274,12 +284,17 @@
                                                 </h6>
                                             </div>
                                             <div class="card-body">
-                                                {% set group_c_students = students | selectattr('status', 'equalto', 'high_risk') | list %}
-                                                {% if group_c_students %}
-                                                    {% for student_data in group_c_students %}
+                                                {% if cluster_groups.get('C') %}
+                                                    {% for cluster_data in cluster_groups['C'] %}
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <small>{{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})</small>
-                                                        <span class="badge bg-danger">{{ student_data.overall_progress }}%</span>
+                                                        <small>
+                                                            {% for student_data in students %}
+                                                                {% if student_data.student.id == cluster_data.student_id %}
+                                                                    {{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </small>
+                                                        <span class="badge bg-danger">{{ cluster_data.overall_progress }}%</span>
                                                     </div>
                                                     {% endfor %}
                                                 {% else %}

@@ -172,7 +172,8 @@ async def course_details(
             "students_by_group": students_by_group,
             "total_lessons": total_lessons,
             "total_tasks": total_tasks,
-            "cluster_groups": cluster_groups
+            "cluster_groups": cluster_groups,
+            "cluster_data_by_student": cluster_data_by_student
         })
         
     except HTTPException:
