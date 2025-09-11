@@ -275,44 +275,103 @@ class StudentService:
 
     def get_student_assignments(self, student_id: str, db: Session) -> List[Dict[str, Any]]:
         """
-        Get student assignments.
+        Get student assignments from all courses.
         
         Args:
             student_id: Student ID
             db: Database session
             
         Returns:
-            List of assignments
+            List of assignments from all student courses
         """
         try:
             logger.info(f"Getting assignments for student: {student_id}")
             
-            # Mock assignments data
-            assignments = [
-                {
-                    "id": "1",
-                    "title": "Лабораторная работа №1",
-                    "description": "Изучение основ программирования на Python",
-                    "course_id": "1",
-                    "course_name": "Программирование",
-                    "due_date": "2024-01-15",
-                    "status": "pending",
-                    "priority": "high",
-                    "is_overdue": False
-                },
-                {
-                    "id": "2",
-                    "title": "Курсовая работа",
-                    "description": "Разработка веб-приложения",
-                    "course_id": "2",
-                    "course_name": "Веб-разработка",
-                    "due_date": "2024-01-20",
-                    "status": "in_progress",
-                    "priority": "medium",
-                    "is_overdue": False
-                }
-            ]
+            # Get all courses for the student
+            student_courses = db.query(Course).join(Student.courses).filter(Student.id == student_id).all()
             
+            if not student_courses:
+                logger.info(f"No courses found for student: {student_id}")
+                return []
+            
+            assignments = []
+            
+            # Get tasks from all student courses
+            for course in student_courses:
+                # Get all tasks for this course
+                tasks = db.query(Task).filter(Task.course_id == course.id).all()
+                
+                for task in tasks:
+                    # Get task completion status for this student
+                    completion = db.query(TaskCompletion).filter(
+                        TaskCompletion.student_id == student_id,
+                        TaskCompletion.task_id == task.id
+                    ).first()
+                    
+                    # Determine status
+                    if completion:
+                        status = completion.status
+                        if status == "missing":
+                            status = "Отправлено"
+                        elif status == "Выполнено":
+                            status = "completed"
+                        elif status == "Не выполнено":
+                            status = "pending"
+                        else:
+                            status = "in_progress"
+                        
+                        completion_date = completion.completed_at.strftime('%d.%m.%Y') if completion.completed_at else None
+                    else:
+                        status = "pending"
+                        completion_date = None
+                    
+                    # Determine if overdue
+                    is_overdue = False
+                    effective_deadline = completion.deadline if completion and completion.deadline else task.deadline
+                    
+                    if effective_deadline:
+                        if completion:
+                            is_completed = completion.status in ["Выполнено", "missing"]
+                            is_overdue = (effective_deadline < datetime.now()) and not is_completed
+                        else:
+                            is_overdue = effective_deadline < datetime.now()
+                    
+                    # Determine priority based on deadline proximity
+                    priority = "low"
+                    if effective_deadline:
+                        days_until_deadline = (effective_deadline - datetime.now()).days
+                        if days_until_deadline < 0:
+                            priority = "high"  # Overdue
+                        elif days_until_deadline <= 3:
+                            priority = "high"
+                        elif days_until_deadline <= 7:
+                            priority = "medium"
+                    
+                    assignment_data = {
+                        "id": str(task.id),
+                        "title": task.name,
+                        "description": f"Тип: {task.task_type}" if task.task_type else "Описание не указано",
+                        "course_id": str(course.id),
+                        "course_name": course.name,
+                        "due_date": effective_deadline.strftime('%d.%m.%Y') if effective_deadline else "Не указан",
+                        "due_date_raw": effective_deadline.isoformat() if effective_deadline else None,
+                        "status": status,
+                        "priority": priority,
+                        "is_overdue": is_overdue,
+                        "completion_date": completion_date,
+                        "task_type": task.task_type
+                    }
+                    
+                    assignments.append(assignment_data)
+            
+            # Sort assignments: overdue first, then by deadline, then by priority
+            assignments.sort(key=lambda x: (
+                not x["is_overdue"],  # Overdue first
+                x["due_date_raw"] or "9999-12-31",  # Then by deadline
+                {"high": 0, "medium": 1, "low": 2}.get(x["priority"], 3)  # Then by priority
+            ))
+            
+            logger.info(f"Found {len(assignments)} assignments for student {student_id}")
             return assignments
             
         except Exception as e:

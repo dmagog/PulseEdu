@@ -33,8 +33,9 @@
                             <select class="form-select" id="statusFilter">
                                 <option value="">Все статусы</option>
                                 <option value="pending">Ожидает выполнения</option>
-                                <option value="in_progress">В процессе</option>
+                                <option value="Отправлено">Отправлено</option>
                                 <option value="completed">Завершено</option>
+                                <option value="in_progress">В процессе</option>
                                 <option value="overdue">Просрочено</option>
                             </select>
                         </div>
@@ -88,13 +89,18 @@
                             <div class="col-md-4 text-end">
                                 <div class="mb-2">
                                     {% if assignment.status == 'completed' %}
-                                        <span class="badge bg-success">Завершено</span>
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Завершено</span>
+                                    {% elif assignment.status == 'Отправлено' %}
+                                        <span class="badge bg-info"><i class="bi bi-send"></i> Отправлено</span>
                                     {% elif assignment.status == 'in_progress' %}
-                                        <span class="badge bg-warning">В процессе</span>
+                                        <span class="badge bg-warning"><i class="bi bi-clock"></i> В процессе</span>
                                     {% elif assignment.is_overdue %}
-                                        <span class="badge bg-danger">Просрочено</span>
+                                        <span class="badge bg-danger"><i class="bi bi-exclamation-circle"></i> Просрочено</span>
                                     {% else %}
-                                        <span class="badge bg-secondary">Ожидает</span>
+                                        <span class="badge bg-secondary"><i class="bi bi-dash-circle"></i> Ожидает</span>
+                                    {% endif %}
+                                    {% if assignment.completion_date %}
+                                        <br><small class="text-muted">Выполнено: {{ assignment.completion_date }}</small>
                                     {% endif %}
                                 </div>
                                 {% if assignment.status != 'completed' %}
