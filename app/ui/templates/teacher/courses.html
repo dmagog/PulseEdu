@@ -94,9 +94,6 @@
                             <small class="text-muted">
                                 <i class="bi bi-calendar"></i> {{ course.start_date }} - {{ course.end_date }}
                             </small>
-                            <small class="text-muted">
-                                <i class="bi bi-clock"></i> {{ course.duration }} часов
-                            </small>
                         </div>
                     </div>
                     <div class="card-footer">
@@ -131,44 +128,6 @@
         {% endif %}
     </div>
 
-    <!-- Quick Actions -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="bi bi-lightning"></i> Быстрые действия</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <button class="btn btn-outline-primary w-100" onclick="createAssignment()">
-                                <i class="bi bi-plus-circle"></i><br>
-                                Создать задание
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-outline-success w-100" onclick="scheduleLesson()">
-                                <i class="bi bi-calendar-plus"></i><br>
-                                Запланировать занятие
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-outline-info w-100" onclick="generateReport()">
-                                <i class="bi bi-file-earmark-text"></i><br>
-                                Создать отчет
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-outline-warning w-100" onclick="sendAnnouncement()">
-                                <i class="bi bi-megaphone"></i><br>
-                                Отправить объявление
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -202,20 +161,5 @@
         alert('Функция запроса курса будет реализована в следующих итерациях');
     }
     
-    function createAssignment() {
-        alert('Функция создания задания будет реализована в следующих итерациях');
-    }
-    
-    function scheduleLesson() {
-        alert('Функция планирования занятия будет реализована в следующих итерациях');
-    }
-    
-    function generateReport() {
-        alert('Функция создания отчета будет реализована в следующих итерациях');
-    }
-    
-    function sendAnnouncement() {
-        alert('Функция отправки объявления будет реализована в следующих итерациях');
-    }
 </script>
 {% endblock %}
