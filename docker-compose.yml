@@ -49,10 +49,7 @@ services:
       - FROM_EMAIL=noreply@pulseedu.local
       - FROM_NAME=Pulse.EDU
       - APP_BASE_URL=http://localhost:8000
-      - SMTP_HOST=mailhog
-      - SMTP_PORT=1025
-      - FROM_EMAIL=noreply@pulseedu.local
-      - FROM_NAME=Pulse.EDU
+      - LOAD_TEST_DATA=${LOAD_TEST_DATA:-false}
     depends_on:
       db:
         condition: service_healthy
@@ -60,7 +57,13 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: >
+      sh -c "
+        echo 'Инициализация базы данных...' &&
+        python scripts/init_db.py &&
+        echo 'Запуск веб-приложения...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
 
   # Celery worker for data ingestion
   worker_ingest:
