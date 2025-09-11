@@ -15,6 +15,46 @@
     <!-- Внутренняя навигация -->
     {% include "teacher/_navigation.html" %}
 
+    <!-- Student Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-people text-primary" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Всего студентов</h5>
+                    <h3 class="text-primary">{{ students|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Отличники</h5>
+                    <h3 class="text-success">{{ students|selectattr('cluster_group', 'equalto', 'A')|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">В зоне риска</h5>
+                    <h3 class="text-warning">{{ students|selectattr('cluster_group', 'equalto', 'C')|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up text-info" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Средний прогресс</h5>
+                    <h3 class="text-info">{{ (students|map(attribute='overall_progress')|sum / students|length)|round(1) if students else 0 }}%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Risk Zones Dashboard -->
     <div class="row mb-4">
         <div class="col-12">
@@ -22,7 +62,7 @@
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-exclamation-triangle text-warning"></i>
-                        Дашборд по зонам риска студентов
+                        Зоны риска студентов
                     </h5>
                 </div>
                 <div class="card-body">
@@ -260,45 +300,6 @@
         </div>
     </div>
 
-    <!-- Student Statistics -->
-    <div class="row mt-4">
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-people text-primary" style="font-size: 2rem;"></i>
-                    <h5 class="card-title mt-2">Всего студентов</h5>
-                    <h3 class="text-primary">{{ students|length }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
-                    <h5 class="card-title mt-2">Отличники</h5>
-                    <h3 class="text-success">{{ students|selectattr('status', 'equalto', 'excellent')|list|length }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
-                    <h5 class="card-title mt-2">В зоне риска</h5>
-                    <h3 class="text-warning">{{ students|selectattr('status', 'equalto', 'at_risk')|list|length }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="bi bi-graph-up text-info" style="font-size: 2rem;"></i>
-                    <h5 class="card-title mt-2">Средний прогресс</h5>
-                    <h3 class="text-info">{{ (students|map(attribute='overall_progress')|sum / students|length)|round(1) if students else 0 }}%</h3>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
