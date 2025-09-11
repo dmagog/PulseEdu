@@ -154,6 +154,13 @@ async def course_details(
                     'overall_progress': round(overall_progress, 1),
                     'status': status
                 })
+            
+            # Sort students within each group alphabetically by name
+            for group_id in students_by_group:
+                students_by_group[group_id].sort(
+                    key=lambda x: (x['student'].name or x['student'].id).lower()
+                )
+                
         except Exception as e:
             logger.warning(f"Error loading students: {e}")
             students_by_group = {"Без группы": []}

@@ -32,6 +32,12 @@
                             Студент
                         {% elif total_students >= 2 and total_students <= 4 %}
                             Студента
+                        {% elif total_students >= 5 and total_students <= 20 %}
+                            Студентов
+                        {% elif total_students % 10 == 1 %}
+                            Студент
+                        {% elif total_students % 10 >= 2 and total_students % 10 <= 4 %}
+                            Студента
                         {% else %}
                             Студентов
                         {% endif %}
@@ -130,6 +136,7 @@
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <h6 class="card-title mb-0 fw-bold">
                                                 {{ student_data.student.name or student_data.student.id }}
+                                                <small class="text-muted fw-normal">(ID: {{ student_data.student.id }})</small>
                                             </h6>
                                             {% if student_data.status == 'good' %}
                                                 <span class="badge bg-success badge-sm">A</span>
@@ -140,35 +147,36 @@
                                             {% endif %}
                                         </div>
                                         
-                                        <small class="text-muted">ID: {{ student_data.student.id }}</small>
-                                        
-                                        <!-- Компактные прогресс-бары -->
+                                        <!-- Компактные прогресс-бары в одну строку -->
                                         <div class="mt-2">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <i class="bi bi-person-check text-success" data-bs-toggle="tooltip" title="Посещаемость"></i>
-                                                <small class="fw-bold">{{ student_data.attendance_rate }}%</small>
-                                            </div>
-                                            <div class="progress mb-2" style="height: 8px;">
-                                                <div class="progress-bar bg-success" role="progressbar" 
-                                                     style="width: {{ student_data.attendance_rate }}%"></div>
-                                            </div>
-                                            
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <i class="bi bi-clipboard-check text-warning" data-bs-toggle="tooltip" title="Выполнение заданий"></i>
-                                                <small class="fw-bold">{{ student_data.completion_rate }}%</small>
-                                            </div>
-                                            <div class="progress mb-2" style="height: 8px;">
-                                                <div class="progress-bar bg-warning" role="progressbar" 
-                                                     style="width: {{ student_data.completion_rate }}%"></div>
+                                            <!-- Посещаемость -->
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi bi-person-check text-success me-2" data-bs-toggle="tooltip" title="Посещаемость" style="font-size: 0.9rem;"></i>
+                                                <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" 
+                                                         style="width: {{ student_data.attendance_rate }}%"></div>
+                                                </div>
+                                                <small class="fw-bold text-nowrap">{{ student_data.attendance_rate }}%</small>
                                             </div>
                                             
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <i class="bi bi-graph-up text-primary" data-bs-toggle="tooltip" title="Общий прогресс"></i>
-                                                <small class="fw-bold">{{ student_data.overall_progress }}%</small>
+                                            <!-- Выполнение заданий -->
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi bi-clipboard-check text-warning me-2" data-bs-toggle="tooltip" title="Выполнение заданий" style="font-size: 0.9rem;"></i>
+                                                <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                    <div class="progress-bar bg-warning" role="progressbar" 
+                                                         style="width: {{ student_data.completion_rate }}%"></div>
+                                                </div>
+                                                <small class="fw-bold text-nowrap">{{ student_data.completion_rate }}%</small>
                                             </div>
-                                            <div class="progress" style="height: 8px;">
-                                                <div class="progress-bar bg-primary" role="progressbar" 
-                                                     style="width: {{ student_data.overall_progress }}%"></div>
+                                            
+                                            <!-- Общий прогресс -->
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-graph-up text-primary me-2" data-bs-toggle="tooltip" title="Общий прогресс" style="font-size: 0.9rem;"></i>
+                                                <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                                         style="width: {{ student_data.overall_progress }}%"></div>
+                                                </div>
+                                                <small class="fw-bold text-nowrap">{{ student_data.overall_progress }}%</small>
                                             </div>
                                         </div>
                                     </div>
@@ -222,7 +230,7 @@
                                                 {% if group_a_students %}
                                                     {% for student_data in group_a_students %}
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <small>{{ student_data.student.name or student_data.student.id }}</small>
+                                                        <small>{{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})</small>
                                                         <span class="badge bg-success">{{ student_data.overall_progress }}%</span>
                                                     </div>
                                                     {% endfor %}
@@ -246,7 +254,7 @@
                                                 {% if group_b_students %}
                                                     {% for student_data in group_b_students %}
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <small>{{ student_data.student.name or student_data.student.id }}</small>
+                                                        <small>{{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})</small>
                                                         <span class="badge bg-warning">{{ student_data.overall_progress }}%</span>
                                                     </div>
                                                     {% endfor %}
@@ -270,7 +278,7 @@
                                                 {% if group_c_students %}
                                                     {% for student_data in group_c_students %}
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <small>{{ student_data.student.name or student_data.student.id }}</small>
+                                                        <small>{{ student_data.student.name or student_data.student.id }} (ID: {{ student_data.student.id }})</small>
                                                         <span class="badge bg-danger">{{ student_data.overall_progress }}%</span>
                                                     </div>
                                                     {% endfor %}
