@@ -820,6 +820,31 @@ class TeacherService:
             self.logger.error(f"Error calculating student attendance: {e}")
             return 0.0
     
+    def _calculate_student_completion_rate(self, student_id: str, db: SQLAlchemySession) -> float:
+        """Calculate task completion rate for a student."""
+        try:
+            # Get all task completions for the student
+            completions = db.query(TaskCompletion).filter(
+                TaskCompletion.student_id == student_id
+            ).all()
+            
+            if not completions:
+                return 0.0
+            
+            # Calculate completion rate - only count tasks that are not "missing"
+            assigned_tasks = [c for c in completions if c.status != "missing"]
+            total_tasks = len(assigned_tasks)
+            completed_tasks = sum(1 for c in assigned_tasks if c.status == "Выполнено")
+            
+            if total_tasks == 0:
+                return 0.0
+            
+            return round((completed_tasks / total_tasks) * 100, 1)
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating student completion rate: {e}")
+            return 0.0
+    
     def _get_risk_factors(self, course_data: Dict[str, Any], progress: Dict[str, Any]) -> List[str]:
         """Get list of risk factors for a student."""
         factors = []

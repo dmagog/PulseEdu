@@ -27,7 +27,15 @@
                         {% set total_students = students_by_group.values() | map('length') | sum %}
                         {{ total_students }}
                     </h5>
-                    <p class="card-text">Студентов</p>
+                    <p class="card-text">
+                        {% if total_students == 1 %}
+                            Студент
+                        {% elif total_students >= 2 and total_students <= 4 %}
+                            Студента
+                        {% else %}
+                            Студентов
+                        {% endif %}
+                    </p>
                 </div>
             </div>
         </div>
@@ -137,7 +145,7 @@
                                         <!-- Компактные прогресс-бары -->
                                         <div class="mt-2">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <small class="text-muted">Посещаемость</small>
+                                                <i class="bi bi-person-check text-success" data-bs-toggle="tooltip" title="Посещаемость"></i>
                                                 <small class="fw-bold">{{ student_data.attendance_rate }}%</small>
                                             </div>
                                             <div class="progress mb-2" style="height: 8px;">
@@ -146,7 +154,7 @@
                                             </div>
                                             
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <small class="text-muted">Задания</small>
+                                                <i class="bi bi-clipboard-check text-warning" data-bs-toggle="tooltip" title="Выполнение заданий"></i>
                                                 <small class="fw-bold">{{ student_data.completion_rate }}%</small>
                                             </div>
                                             <div class="progress mb-2" style="height: 8px;">
@@ -155,7 +163,7 @@
                                             </div>
                                             
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <small class="text-muted">Прогресс</small>
+                                                <i class="bi bi-graph-up text-primary" data-bs-toggle="tooltip" title="Общий прогресс"></i>
                                                 <small class="fw-bold">{{ student_data.overall_progress }}%</small>
                                             </div>
                                             <div class="progress" style="height: 8px;">
@@ -353,4 +361,14 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
 {% endblock %}
