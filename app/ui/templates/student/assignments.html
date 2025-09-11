@@ -72,13 +72,6 @@
                             <div class="col-md-8">
                                 <h5 class="card-title">
                                     {{ assignment.title }}
-                                    {% if assignment.priority == 'high' %}
-                                        <span class="badge bg-danger ms-2">Высокий приоритет</span>
-                                    {% elif assignment.priority == 'medium' %}
-                                        <span class="badge bg-warning ms-2">Средний приоритет</span>
-                                    {% else %}
-                                        <span class="badge bg-info ms-2">Низкий приоритет</span>
-                                    {% endif %}
                                 </h5>
                                 <p class="card-text">{{ assignment.description }}</p>
                                 <small class="text-muted">
@@ -103,15 +96,24 @@
                                         <br><small class="text-muted">Выполнено: {{ assignment.completion_date }}</small>
                                     {% endif %}
                                 </div>
-                                {% if assignment.status != 'completed' %}
-                                    <button class="btn btn-primary btn-sm" onclick="startAssignment('{{ assignment.id }}')">
-                                        <i class="bi bi-play"></i> Начать
-                                    </button>
-                                {% endif %}
-                                {% if assignment.status == 'in_progress' %}
-                                    <button class="btn btn-success btn-sm" onclick="completeAssignment('{{ assignment.id }}')">
-                                        <i class="bi bi-check"></i> Завершить
-                                    </button>
+                                {% if assignment.status == 'completed' %}
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-info btn-sm dropdown-toggle" type="button" 
+                                                id="recommendationsDropdown{{ assignment.id }}" 
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-lightbulb"></i> Рекомендации ИИ
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end" 
+                                            aria-labelledby="recommendationsDropdown{{ assignment.id }}">
+                                            <li><h6 class="dropdown-header">Рекомендации по заданию</h6></li>
+                                            <li><div class="px-3 py-2">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-check-circle text-success"></i> 
+                                                    Отличная работа! Для дальнейшего развития рекомендую изучить дополнительные материалы по теме.
+                                                </small>
+                                            </div></li>
+                                        </ul>
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
@@ -158,14 +160,5 @@
         });
     }
     
-    function startAssignment(assignmentId) {
-        // TODO: Implement assignment start functionality
-        alert('Функция начала задания будет реализована в следующих итерациях');
-    }
-    
-    function completeAssignment(assignmentId) {
-        // TODO: Implement assignment completion functionality
-        alert('Функция завершения задания будет реализована в следующих итерациях');
-    }
 </script>
 {% endblock %}

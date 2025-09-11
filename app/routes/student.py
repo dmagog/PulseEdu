@@ -288,6 +288,50 @@ async def student_recommendations(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+@router.get("/course/{course_id}", response_class=HTMLResponse)
+async def student_course_details(
+    request: Request,
+    course_id: int,
+    student_id: str = Query(default="01", description="Student ID"),
+    db: Session = Depends(get_session)
+) -> HTMLResponse:
+    """
+    Student course details page with lessons and assignments.
+    
+    Args:
+        request: FastAPI request object
+        course_id: Course ID
+        student_id: Student ID
+        db: Database session
+        
+    Returns:
+        HTML response with course details
+    """
+    logger.info(f"Student course details requested for student: {student_id}, course: {course_id}")
+    
+    try:
+        # Get student data
+        student = db.query(Student).filter(Student.id == student_id).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+        
+        # Get course details
+        course_details = student_service.get_course_details_for_student(student_id, course_id, db)
+        
+        return templates.TemplateResponse("student/course_details.html", {
+            "request": request,
+            "title": f"Курс - {course_details['course'].name}",
+            "student": student,
+            "course_details": course_details
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error loading student course details: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
 @router.get("/api/progress/{student_id}")
 async def get_student_progress_api(
     student_id: str,

@@ -19,8 +19,11 @@
         {% if courses %}
             {% for course_data in courses %}
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5><i class="bi bi-book-half"></i> {{ course_data.course.name }}</h5>
+                    <a href="/student/course/{{ course_data.course.id }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-eye"></i> Подробнее
+                    </a>
                 </div>
                 <div class="card-body">
                     <div class="row">

@@ -287,8 +287,23 @@ class StudentService:
         try:
             logger.info(f"Getting assignments for student: {student_id}")
             
-            # Get all courses for the student
-            student_courses = db.query(Course).join(Student.courses).filter(Student.id == student_id).all()
+            # Get all courses for the student through attendances and task completions
+            # Get courses from attendances
+            courses_from_attendance = db.query(Course).join(Lesson, Course.id == Lesson.course_id).join(
+                Attendance, Lesson.id == Attendance.lesson_id
+            ).filter(Attendance.student_id == student_id).distinct().all()
+            
+            # Get courses from task completions
+            courses_from_tasks = db.query(Course).join(Task, Course.id == Task.course_id).join(
+                TaskCompletion, Task.id == TaskCompletion.task_id
+            ).filter(TaskCompletion.student_id == student_id).distinct().all()
+            
+            # Combine and deduplicate courses
+            all_courses = courses_from_attendance + courses_from_tasks
+            unique_courses = {}
+            for course in all_courses:
+                unique_courses[course.id] = course
+            student_courses = list(unique_courses.values())
             
             if not student_courses:
                 logger.info(f"No courses found for student: {student_id}")
