@@ -468,6 +468,7 @@
                 setTimeout(() => {
                     loadClusteringData();
                     location.reload(); // Перезагружаем страницу для обновления данных студентов
+                    // Сортировка будет применена автоматически при загрузке страницы
                 }, 2000);
             } else {
                 const errorText = await response.text();
@@ -516,6 +517,9 @@
             
             row.style.display = show ? 'table-row' : 'none';
         });
+        
+        // Применяем сортировку после фильтрации
+        sortStudentsByProgress();
     }
     
     function viewStudent(studentId) {
@@ -532,15 +536,37 @@
         alert('Функция экспорта студентов будет реализована в следующих итерациях');
     }
 
-    // Сортировка студентов по прогрессу (убывание)
+    // Сортировка студентов по приоритету: прогресс (убывание), посещаемость (убывание), ФИО (алфавит), ID (возрастание)
     function sortStudentsByProgress() {
         const tbody = document.querySelector('tbody');
         const rows = Array.from(tbody.querySelectorAll('tr'));
         
         rows.sort((a, b) => {
+            // 1. По убыванию прогресса
             const progressA = parseFloat(a.querySelector('.progress-bar').textContent) || 0;
             const progressB = parseFloat(b.querySelector('.progress-bar').textContent) || 0;
-            return progressB - progressA; // Убывание
+            if (progressA !== progressB) {
+                return progressB - progressA; // Убывание
+            }
+            
+            // 2. По убыванию посещаемости
+            const attendanceA = parseFloat(a.querySelector('td:nth-child(6) span').textContent) || 0;
+            const attendanceB = parseFloat(b.querySelector('td:nth-child(6) span').textContent) || 0;
+            if (attendanceA !== attendanceB) {
+                return attendanceB - attendanceA; // Убывание
+            }
+            
+            // 3. По алфавиту ФИО
+            const nameA = a.querySelector('td:nth-child(2) .fw-bold').textContent.trim() || '';
+            const nameB = b.querySelector('td:nth-child(2) .fw-bold').textContent.trim() || '';
+            if (nameA !== nameB) {
+                return nameA.localeCompare(nameB, 'ru'); // Алфавит
+            }
+            
+            // 4. По возрастанию ID
+            const idA = parseInt(a.querySelector('td:nth-child(1) strong').textContent) || 0;
+            const idB = parseInt(b.querySelector('td:nth-child(1) strong').textContent) || 0;
+            return idA - idB; // Возрастание
         });
         
         // Очищаем tbody и добавляем отсортированные строки
