@@ -384,10 +384,14 @@
             qualityElement.className = 'badge bg-danger';
         }
         
-        // Устанавливаем текущее время как последнее обновление
-        const now = new Date();
-        const gmtPlus5 = new Date(now.getTime() + (5 * 60 * 60 * 1000));
-        document.getElementById('last-update').textContent = gmtPlus5.toLocaleString('ru-RU');
+        // Устанавливаем время последней кластеризации
+        if (clusteringData.last_clustering_time) {
+            const lastUpdate = new Date(clusteringData.last_clustering_time);
+            const gmtPlus5 = new Date(lastUpdate.getTime() + (5 * 60 * 60 * 1000));
+            document.getElementById('last-update').textContent = gmtPlus5.toLocaleString('ru-RU');
+        } else {
+            document.getElementById('last-update').textContent = 'Не определено';
+        }
 
         // Обновление графика
         updateClusterChart(riskCounts);

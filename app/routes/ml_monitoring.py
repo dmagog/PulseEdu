@@ -320,11 +320,17 @@ async def get_student_clusters(
                 "avg_progress": sum(s["overall_progress"] for s in students) / len(students) if students else 0
             }
         
+        # Get last clustering time
+        last_clustering_time = None
+        if clusters:
+            last_clustering_time = max(cluster.created_at for cluster in clusters)
+        
         return {
             "status": "success",
             "total_students": total_students,
             "cluster_groups": cluster_groups,
-            "cluster_summary": cluster_summary
+            "cluster_summary": cluster_summary,
+            "last_clustering_time": last_clustering_time.isoformat() if last_clustering_time else None
         }
         
     except Exception as e:
