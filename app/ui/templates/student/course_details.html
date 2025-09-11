@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="bi bi-book"></i> {{ course_details.course.name }}</h1>
+            <p class="text-muted">Студент ID: {{ student.id }}</p>
+        </div>
+    </div>
+
+    <!-- Внутренняя навигация -->
+    {% include "student/_navigation.html" %}
+
+    <!-- Course Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="bi bi-calendar-check"></i> Посещаемость занятий</h6>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3" style="height: 20px;">
+                        <div class="progress-bar bg-info" role="progressbar" 
+                             style="width: {{ course_details.statistics.attendance_rate }}%"
+                             aria-valuenow="{{ course_details.statistics.attendance_rate }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            {{ "%.1f"|format(course_details.statistics.attendance_rate) }}%
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0">
+                        Посещено: {{ course_details.statistics.attended_lessons }} из {{ course_details.statistics.total_lessons }} занятий
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="bi bi-check-circle"></i> Выполнение заданий</h6>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3" style="height: 20px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ course_details.statistics.completion_rate }}%"
+                             aria-valuenow="{{ course_details.statistics.completion_rate }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            {{ "%.1f"|format(course_details.statistics.completion_rate) }}%
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0">
+                        Выполнено: {{ course_details.statistics.completed_tasks }} из {{ course_details.statistics.total_tasks }} заданий
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Lessons -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-calendar3"></i> Занятия</h5>
+                </div>
+                <div class="card-body">
+                    {% if course_details.lessons %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Занятие</th>
+                                        <th>Дата</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lesson in course_details.lessons %}
+                                    <tr>
+                                        <td>
+                                            <small class="fw-bold">{{ lesson.lesson_name }}</small>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ lesson.lesson_date }}</small>
+                                            <br>
+                                            <small class="text-muted">{{ lesson.lesson_time }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ lesson.status_class }}">
+                                                {% if lesson.attended %}
+                                                    <i class="bi bi-check-circle"></i> {{ lesson.status }}
+                                                {% else %}
+                                                    <i class="bi bi-x-circle"></i> {{ lesson.status }}
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Занятия не найдены</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignments -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-list-task"></i> Задания</h5>
+                </div>
+                <div class="card-body">
+                    {% if course_details.assignments %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Задание</th>
+                                        <th>Срок</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in course_details.assignments %}
+                                    <tr class="{% if assignment.is_overdue %}table-warning{% endif %}">
+                                        <td>
+                                            <small class="fw-bold">{{ assignment.title }}</small>
+                                            <br>
+                                            <small class="text-muted">{{ assignment.description[:50] }}{% if assignment.description|length > 50 %}...{% endif %}</small>
+                                        </td>
+                                        <td>
+                                            <small class="{% if assignment.is_overdue %}text-danger{% else %}text-muted{% endif %}">
+                                                {{ assignment.deadline }}
+                                            </small>
+                                            {% if assignment.completion_date %}
+                                                <br>
+                                                <small class="text-success">
+                                                    Выполнено: {{ assignment.completion_date }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ assignment.status_class }}">
+                                                {% if assignment.status == "Выполнено" %}
+                                                    <i class="bi bi-check-circle"></i> {{ assignment.status }}
+                                                {% elif assignment.status == "Отправлено" %}
+                                                    <i class="bi bi-send"></i> {{ assignment.status }}
+                                                {% elif assignment.status == "В процессе" %}
+                                                    <i class="bi bi-clock"></i> {{ assignment.status }}
+                                                {% elif assignment.status == "Не назначено" %}
+                                                    <i class="bi bi-dash-circle"></i> {{ assignment.status }}
+                                                {% else %}
+                                                    <i class="bi bi-exclamation-circle"></i> {{ assignment.status }}
+                                                {% endif %}
+                                            </span>
+                                            {% if assignment.is_overdue %}
+                                                <br>
+                                                <small class="badge bg-danger mt-1">Просрочено</small>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Задания не найдены</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="/student/courses" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Назад к курсам
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

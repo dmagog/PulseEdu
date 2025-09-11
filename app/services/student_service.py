@@ -7,7 +7,7 @@ from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_
 
-from app.models.student import Student, Course, Task, Attendance, TaskCompletion
+from app.models.student import Student, Course, Task, Attendance, TaskCompletion, Lesson
 from app.services.metrics_service import MetricsService
 
 logger = logging.getLogger("app.student")
@@ -48,6 +48,126 @@ class StudentService:
             
         except Exception as e:
             logger.error(f"Error getting student progress: {e}")
+            return {"error": str(e)}
+    
+    def get_course_details_for_student(self, student_id: str, course_id: int, db: Session) -> Dict[str, Any]:
+        """
+        Get detailed course information for a student including lessons and assignments.
+        
+        Args:
+            student_id: Student ID
+            course_id: Course ID
+            db: Database session
+            
+        Returns:
+            Dictionary with course details including lessons and assignments
+        """
+        try:
+            logger.info(f"Getting course details for student: {student_id}, course: {course_id}")
+            
+            # Get course information
+            course = db.query(Course).filter(Course.id == course_id).first()
+            if not course:
+                return {"error": "Course not found"}
+            
+            # Get all lessons for this course with attendance data
+            lessons_query = db.query(Attendance, Lesson).join(Lesson, Attendance.lesson_id == Lesson.id).filter(
+                and_(Attendance.course_id == course_id, Attendance.student_id == student_id)
+            ).order_by(Lesson.date).all()
+            
+            # Get all tasks/assignments for this course
+            tasks = db.query(Task).filter(Task.course_id == course_id).order_by(Task.created_at).all()
+            
+            # Get task completions for this student
+            task_completions = db.query(TaskCompletion).filter(
+                and_(TaskCompletion.course_id == course_id, TaskCompletion.student_id == student_id)
+            ).all()
+            
+            # Create a mapping of task_id to completion status
+            completion_map = {tc.task_id: tc for tc in task_completions}
+            
+            # Process lessons data
+            lessons_data = []
+            for attendance, lesson in lessons_query:
+                lessons_data.append({
+                    "id": lesson.id,
+                    "lesson_name": lesson.title or f"Занятие {lesson.lesson_number}",
+                    "lesson_date": lesson.date.strftime('%d.%m.%Y') if lesson.date else "Не указано",
+                    "lesson_time": lesson.date.strftime('%H:%M') if lesson.date else "Не указано",
+                    "attended": attendance.attended,
+                    "status": "Посещено" if attendance.attended else "Пропущено",
+                    "status_class": "success" if attendance.attended else "danger"
+                })
+            
+            # Process tasks/assignments data
+            assignments_data = []
+            for task in tasks:
+                completion = completion_map.get(task.id)
+                if completion:
+                    status = completion.status
+                    # Change "missing" to more user-friendly "Отправлено"
+                    if status == "missing":
+                        status = "Отправлено"
+                        status_class = "info"  # Blue color for "sent for review"
+                    elif status == "Выполнено":
+                        status_class = "success"
+                    elif status == "В процессе":
+                        status_class = "warning"
+                    else:
+                        status_class = "danger"
+                    completion_date = completion.completed_at.strftime('%d.%m.%Y') if completion.completed_at else None
+                else:
+                    status = "Не назначено"
+                    status_class = "secondary"
+                    completion_date = None
+                
+                # Determine if task is overdue
+                is_overdue = False
+                # Use deadline from task_completions if available, otherwise from tasks
+                effective_deadline = completion.deadline if completion and completion.deadline else task.deadline
+                
+                if effective_deadline and completion:
+                    # Task is overdue only if deadline has passed AND task is not completed
+                    # Consider "missing" as completed since it was submitted
+                    is_completed = completion.status in ["Выполнено", "missing"]
+                    is_overdue = (effective_deadline < datetime.now()) and not is_completed
+                elif effective_deadline and not completion:
+                    # Task is overdue if deadline has passed AND task is not assigned/completed
+                    is_overdue = effective_deadline < datetime.now()
+                
+                assignments_data.append({
+                    "id": task.id,
+                    "title": task.name or f"Задание #{task.id}",
+                    "description": f"Тип: {task.task_type}" if task.task_type else "Описание не указано",
+                    "deadline": effective_deadline.strftime('%d.%m.%Y') if effective_deadline else "Не указано",
+                    "status": status,
+                    "status_class": status_class,
+                    "completion_date": completion_date,
+                    "is_overdue": is_overdue
+                })
+            
+            # Calculate course statistics
+            total_lessons = len(lessons_data)
+            attended_lessons = sum(1 for lesson_data in lessons_data if lesson_data['attended'])
+            total_tasks = len(tasks)
+            completed_tasks = sum(1 for task in tasks if completion_map.get(task.id, {}).status == "Выполнено")
+            
+            return {
+                "course": course,
+                "lessons": lessons_data,
+                "assignments": assignments_data,
+                "statistics": {
+                    "total_lessons": total_lessons,
+                    "attended_lessons": attended_lessons,
+                    "attendance_rate": (attended_lessons / total_lessons * 100) if total_lessons > 0 else 0,
+                    "total_tasks": total_tasks,
+                    "completed_tasks": completed_tasks,
+                    "completion_rate": (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting course details for student: {e}")
             return {"error": str(e)}
     
     def get_activity_feed(self, student_id: str, db: Session, limit: int = 10) -> List[Dict[str, Any]]:
