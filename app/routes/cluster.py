@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from app.database.session import get_session
 from app.services.cluster_service import ClusterService
-from app.middleware.auth import require_admin
+from app.middleware.auth import require_admin, require_teacher_access
 
 
 class ClusteringRequest(BaseModel):
@@ -41,6 +41,39 @@ async def trigger_clustering(
     try:
         force_update = request_data.force_update
         logger.info(f"Triggering clustering recalculation, force_update={force_update}")
+        
+        # Trigger ML clustering for all courses
+        result = cluster_service.cluster_all_courses(db)
+        
+        return {
+            "status": "success",
+            "message": "Clustering recalculation triggered successfully",
+            "result": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error triggering clustering: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/trigger-clustering-teacher")
+async def trigger_clustering_teacher(
+    request_data: ClusteringRequest,
+    db: Session = Depends(get_session)
+) -> Dict[str, Any]:
+    """
+    Trigger clustering recalculation for all courses (teacher access).
+    
+    Args:
+        force_update: Force update even if recent clustering exists
+        db: Database session
+        
+    Returns:
+        Dictionary with clustering result
+    """
+    try:
+        force_update = request_data.force_update
+        logger.info(f"Triggering clustering recalculation (teacher), force_update={force_update}")
         
         # Trigger ML clustering for all courses
         result = cluster_service.cluster_all_courses(db)

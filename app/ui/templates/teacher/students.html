@@ -432,13 +432,13 @@
     async function refreshClusteringData() {
         try {
             // Показываем индикатор загрузки
-            const button = event.target;
+            const button = document.querySelector('button[onclick="refreshClusteringData()"]');
             const originalText = button.innerHTML;
             button.innerHTML = '<i class="bi bi-hourglass-split"></i> Обновление...';
             button.disabled = true;
             
             // Запускаем пересчет кластеризации
-            const response = await fetch('/api/cluster/trigger-clustering', {
+            const response = await fetch('/api/cluster/trigger-clustering-teacher', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -453,16 +453,20 @@
                     location.reload(); // Перезагружаем страницу для обновления данных студентов
                 }, 2000);
             } else {
-                alert('Ошибка при запуске пересчета кластеризации');
+                const errorText = await response.text();
+                console.error('Ошибка API:', response.status, errorText);
+                alert('Ошибка при запуске пересчета кластеризации: ' + response.status);
             }
         } catch (error) {
             console.error('Ошибка обновления кластеризации:', error);
-            alert('Ошибка при обновлении данных кластеризации');
+            alert('Ошибка при обновлении данных кластеризации: ' + error.message);
         } finally {
             // Восстанавливаем кнопку
-            const button = event.target;
-            button.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Обновить';
-            button.disabled = false;
+            const button = document.querySelector('button[onclick="refreshClusteringData()"]');
+            if (button) {
+                button.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Обновить';
+                button.disabled = false;
+            }
         }
     }
 
