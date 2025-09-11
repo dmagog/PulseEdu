@@ -1,6 +1,7 @@
 """
 Database initialization script.
 """
+
 import logging
 from datetime import datetime
 
@@ -16,7 +17,7 @@ logger = logging.getLogger("app.database")
 def init_roles(db: Session) -> None:
     """
     Initialize default roles in the database.
-    
+
     Args:
         db: Database session
     """
@@ -27,7 +28,7 @@ def init_roles(db: Session) -> None:
         {"role_id": "data_operator", "name": "data_operator", "description": "Оператор данных"},
         {"role_id": "admin", "name": "admin", "description": "Администратор системы"},
     ]
-    
+
     for role_data in default_roles:
         existing_role = db.query(Role).filter(Role.role_id == role_data["role_id"]).first()
         if not existing_role:
@@ -36,7 +37,7 @@ def init_roles(db: Session) -> None:
             logger.info(f"Created role: {role_data['name']}")
         else:
             logger.debug(f"Role already exists: {role_data['name']}")
-    
+
     db.commit()
 
 
@@ -45,15 +46,16 @@ def init_database() -> None:
     Initialize database with default data.
     """
     logger.info("Initializing database...")
-    
+
     # Create tables
-    from app.models.user import User, Role, UserRole, UserAuthLog
-    from app.models.admin import AdminSetting
     from sqlmodel import SQLModel
-    
+
+    from app.models.admin import AdminSetting
+    from app.models.user import Role, User, UserAuthLog, UserRole
+
     SQLModel.metadata.create_all(engine)
     logger.info("Database tables created")
-    
+
     # Initialize default data
     db = SessionLocal()
     try:

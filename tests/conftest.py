@@ -1,18 +1,18 @@
 """
 Pytest configuration and fixtures for PulseEdu tests.
 """
-import pytest
-import os
+
 import tempfile
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database.session import get_session
-from app.models.student import Student, Course, Task, Lesson, Attendance, TaskCompletion
-from app.models.user import User, Role, UserRole
-from app.models.cluster import StudentCluster
 from app.main import app
+from app.models.student import Course, Lesson, Student, Task
+from app.models.user import Role, User
 
 
 @pytest.fixture(scope="session")
@@ -43,8 +43,9 @@ def test_db_session(test_engine, test_session_factory):
     """Create a test database session."""
     # Create tables
     from sqlmodel import SQLModel
+
     SQLModel.metadata.create_all(bind=test_engine)
-    
+
     session = test_session_factory()
     try:
         yield session
@@ -57,26 +58,27 @@ def test_db_session(test_engine, test_session_factory):
 @pytest.fixture(scope="function")
 def isolated_db_session(test_engine):
     """Create an isolated database session for each test."""
+    import os
+
+    # Create a new in-memory database for each test
+    import tempfile
+
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from sqlmodel import SQLModel
-    
-    # Create a new in-memory database for each test
-    import tempfile
-    import os
-    
+
     # Create temporary database file
-    fd, temp_db = tempfile.mkstemp(suffix='.db')
+    fd, temp_db = tempfile.mkstemp(suffix=".db")
     os.close(fd)
-    
+
     # Create engine for this test
     engine = create_engine(f"sqlite:///{temp_db}", connect_args={"check_same_thread": False})
     SQLModel.metadata.create_all(bind=engine)
-    
+
     # Create session
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = SessionLocal()
-    
+
     try:
         yield session
     finally:
@@ -92,18 +94,20 @@ def isolated_db_session(test_engine):
 @pytest.fixture
 def client(test_db_session):
     """Create a test client with database dependency override."""
+
     def override_get_session():
         try:
             yield test_db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_session] = override_get_session
-    
+
     from fastapi.testclient import TestClient
+
     with TestClient(app) as test_client:
         yield test_client
-    
+
     app.dependency_overrides.clear()
 
 
@@ -111,13 +115,9 @@ def client(test_db_session):
 def sample_student(test_db_session):
     """Create a sample student for testing."""
     import uuid
+
     student_id = f"test_student_{uuid.uuid4().hex[:8]}"
-    student = Student(
-        id=student_id,
-        name="Тестовый Студент",
-        email="test@example.com",
-        group_id="Группа А"
-    )
+    student = Student(id=student_id, name="Тестовый Студент", email="test@example.com", group_id="Группа А")
     test_db_session.add(student)
     test_db_session.commit()
     test_db_session.refresh(student)
@@ -128,12 +128,9 @@ def sample_student(test_db_session):
 def sample_course(test_db_session):
     """Create a sample course for testing."""
     import uuid
+
     course_id = uuid.uuid4().int % 1000000  # Generate unique course ID
-    course = Course(
-        id=course_id,
-        name="Тестовый курс",
-        description="Описание тестового курса"
-    )
+    course = Course(id=course_id, name="Тестовый курс", description="Описание тестового курса")
     test_db_session.add(course)
     test_db_session.commit()
     test_db_session.refresh(course)
@@ -144,13 +141,14 @@ def sample_course(test_db_session):
 def sample_task(test_db_session, sample_course):
     """Create a sample task for testing."""
     import uuid
+
     task_id = uuid.uuid4().int % 1000000  # Generate unique task ID
     task = Task(
         id=task_id,
         name="Тестовое задание",
         description="Описание тестового задания",
         course_id=sample_course.id,
-        deadline="2024-12-31 23:59:59"
+        deadline="2024-12-31 23:59:59",
     )
     test_db_session.add(task)
     test_db_session.commit()
@@ -162,13 +160,10 @@ def sample_task(test_db_session, sample_course):
 def sample_lesson(test_db_session, sample_course):
     """Create a sample lesson for testing."""
     import uuid
+
     lesson_id = uuid.uuid4().int % 1000000  # Generate unique lesson ID
     lesson = Lesson(
-        id=lesson_id,
-        title="Тестовый урок",
-        lesson_number=1,
-        course_id=sample_course.id,
-        date="2024-01-15 10:00:00"
+        id=lesson_id, title="Тестовый урок", lesson_number=1, course_id=sample_course.id, date="2024-01-15 10:00:00"
     )
     test_db_session.add(lesson)
     test_db_session.commit()
@@ -184,7 +179,7 @@ def sample_user(test_db_session):
         email="user@example.com",
         login="testuser",
         display_name="Тестовый Пользователь",
-        is_active=True
+        is_active=True,
     )
     test_db_session.add(user)
     test_db_session.commit()
@@ -196,12 +191,9 @@ def sample_user(test_db_session):
 def sample_role(test_db_session):
     """Create a sample role for testing."""
     import uuid
+
     role_id = uuid.uuid4().int % 1000000  # Generate unique role ID
-    role = Role(
-        role_id=role_id,
-        role_name="test_role",
-        description="Тестовая роль"
-    )
+    role = Role(role_id=role_id, role_name="test_role", description="Тестовая роль")
     test_db_session.add(role)
     test_db_session.commit()
     test_db_session.refresh(role)

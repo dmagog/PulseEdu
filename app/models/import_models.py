@@ -1,16 +1,18 @@
 """
 Import job models.
 """
+
 from datetime import datetime
-from typing import Optional, List
-from sqlmodel import SQLModel, Field, Relationship
+from typing import List, Optional
+
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class ImportJob(SQLModel, table=True):
     """Import job tracking model."""
-    
+
     __tablename__ = "import_jobs"
-    
+
     job_id: str = Field(primary_key=True, max_length=50)
     filename: str = Field(max_length=255)
     original_filename: str = Field(max_length=255)
@@ -23,16 +25,16 @@ class ImportJob(SQLModel, table=True):
     started_at: Optional[datetime] = Field(default=None)
     completed_at: Optional[datetime] = Field(default=None)
     created_by: Optional[str] = Field(default=None, max_length=50)
-    
+
     # Relationships
     errors: List["ImportErrorLog"] = Relationship(back_populates="job")
 
 
 class ImportErrorLog(SQLModel, table=True):
     """Import error details model."""
-    
+
     __tablename__ = "import_errors"
-    
+
     error_id: int = Field(primary_key=True)
     job_id: str = Field(foreign_key="import_jobs.job_id")
     row_number: int = Field()
@@ -41,6 +43,6 @@ class ImportErrorLog(SQLModel, table=True):
     error_message: str = Field(max_length=500)
     cell_value: Optional[str] = Field(default=None, max_length=1000)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+
     # Relationships
     job: ImportJob = Relationship(back_populates="errors")

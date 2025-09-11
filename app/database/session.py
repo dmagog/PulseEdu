@@ -1,10 +1,12 @@
 """
 Database session management.
 """
+
 import logging
-from typing import Generator
-from sqlalchemy.orm import sessionmaker, Session
 from contextlib import contextmanager
+from typing import Generator
+
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.engine import engine
 
@@ -17,7 +19,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def get_session() -> Generator[Session, None, None]:
     """
     Dependency to get database session.
-    
+
     Yields:
         Database session
     """

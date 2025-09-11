@@ -1,15 +1,19 @@
 """
 LLM-related models for recommendations and call logging.
 """
-from datetime import datetime
-from typing import Optional, List
-from sqlmodel import SQLModel, Field, Column, Text, JSON
+
 import json
+from datetime import datetime
+from typing import List, Optional
+
+from sqlmodel import JSON, Column, Field, SQLModel, Text
+
 
 class LLMRecommendation(SQLModel, table=True):
     """Cached LLM recommendations for students."""
+
     __tablename__ = "llm_recommendations"
-    
+
     id: Optional[int] = Field(default=None, primary_key=True)
     student_id: str = Field(index=True)
     course_id: str = Field(index=True)
@@ -18,7 +22,7 @@ class LLMRecommendation(SQLModel, table=True):
     recommendations_json: str = Field(sa_column=Column(Text))
     expires_at: datetime = Field(index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+
     def get_recommendations(self) -> List[str]:
         """Get recommendations as list."""
         try:
@@ -26,10 +30,12 @@ class LLMRecommendation(SQLModel, table=True):
         except (json.JSONDecodeError, TypeError):
             return []
 
+
 class LLMCallLog(SQLModel, table=True):
     """Log of LLM API calls for monitoring and debugging."""
+
     __tablename__ = "llm_call_logs"
-    
+
     id: Optional[int] = Field(default=None, primary_key=True)
     student_id: Optional[str] = Field(index=True)
     course_id: Optional[str] = Field(index=True)
@@ -42,21 +48,23 @@ class LLMCallLog(SQLModel, table=True):
     error_message: Optional[str] = None
     cost_usd: Optional[float] = None
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
-    
+
     # Additional metadata
     model_used: Optional[str] = None
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
     retry_count: int = Field(default=0)
-    
+
     # Response data (for debugging)
     response_preview: Optional[str] = None  # First 200 chars of response
     recommendations_count: Optional[int] = None
 
+
 class LLMFeedback(SQLModel, table=True):
     """Student and teacher feedback on LLM recommendations."""
+
     __tablename__ = "llm_feedback"
-    
+
     id: Optional[int] = Field(default=None, primary_key=True)
     recommendation_id: int = Field(index=True)  # Reference to LLMRecommendation
     student_id: str = Field(index=True)
@@ -68,11 +76,13 @@ class LLMFeedback(SQLModel, table=True):
     edited_recommendation: Optional[str] = None  # For teacher edits
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     created_by: str = Field(index=True)  # "student" or "teacher"
-    
+
+
 class LLMUsageStats(SQLModel, table=True):
     """Daily usage statistics for LLM monitoring."""
+
     __tablename__ = "llm_usage_stats"
-    
+
     id: Optional[int] = Field(default=None, primary_key=True)
     date: datetime = Field(index=True)
     total_requests: int = Field(default=0)

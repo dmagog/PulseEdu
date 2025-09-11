@@ -4,22 +4,20 @@
 Проверяет доступность всех компонентов системы
 """
 
+import logging
 import os
 import sys
 import time
-import requests
-import logging
 from pathlib import Path
+
+import requests
 
 # Добавляем корневую директорию проекта в Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Настройка логирования
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -27,11 +25,11 @@ def check_database():
     """Проверяет доступность базы данных"""
     try:
         from app.database.session import engine
-        
+
         with engine.connect() as conn:
             result = conn.execute("SELECT 1")
             result.fetchone()
-        
+
         logger.info("✅ База данных доступна")
         return True
     except Exception as e:
@@ -43,11 +41,11 @@ def check_rabbitmq():
     """Проверяет доступность RabbitMQ"""
     try:
         import pika
-        
+
         rabbitmq_url = os.getenv("RABBITMQ_URL", "amqp://pulseedu:pulseedu@localhost:5672//")
         connection = pika.BlockingConnection(pika.URLParameters(rabbitmq_url))
         connection.close()
-        
+
         logger.info("✅ RabbitMQ доступен")
         return True
     except Exception as e:
@@ -59,7 +57,7 @@ def check_web_app():
     """Проверяет доступность веб-приложения"""
     try:
         base_url = os.getenv("APP_BASE_URL", "http://localhost:8000")
-        
+
         # Проверяем health endpoint
         response = requests.get(f"{base_url}/healthz", timeout=10)
         if response.status_code == 200:
@@ -82,7 +80,7 @@ def check_celery_workers():
             response = requests.get(f"{flower_url}/api/workers", timeout=5)
             if response.status_code == 200:
                 workers = response.json()
-                active_workers = [w for w in workers.values() if w.get('status')]
+                active_workers = [w for w in workers.values() if w.get("status")]
                 if active_workers:
                     logger.info(f"✅ Celery workers активны: {len(active_workers)} воркеров")
                     return True
@@ -130,7 +128,7 @@ def check_adminer():
 def main():
     """Основная функция проверки"""
     logger.info("🔍 Запуск проверки готовности системы PulseEdu")
-    
+
     checks = [
         ("База данных", check_database),
         ("RabbitMQ", check_rabbitmq),
@@ -139,23 +137,23 @@ def main():
         ("MailHog", check_mailhog),
         ("Adminer", check_adminer),
     ]
-    
+
     results = []
     for name, check_func in checks:
         logger.info(f"Проверка {name}...")
         result = check_func()
         results.append((name, result))
-        
+
         if not result and name in ["База данных", "RabbitMQ", "Веб-приложение"]:
             logger.error(f"❌ Критический компонент {name} недоступен")
             sys.exit(1)
-    
+
     # Выводим итоговый отчет
     logger.info("\n📊 Результаты проверки:")
     for name, result in results:
         status = "✅ OK" if result else "❌ FAIL"
         logger.info(f"  {name}: {status}")
-    
+
     failed_checks = [name for name, result in results if not result]
     if failed_checks:
         logger.warning(f"⚠️ Недоступные компоненты: {', '.join(failed_checks)}")
