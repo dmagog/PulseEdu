@@ -4,8 +4,8 @@ Teacher service for managing teacher dashboard and course oversight.
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, func, desc
+from sqlmodel import Session, select, and_, func, desc
+from sqlalchemy.orm import Session as SQLAlchemySession
 
 from app.models.student import Student, Course, Task, Attendance, TaskCompletion
 from app.models.cluster import StudentCluster
@@ -317,6 +317,17 @@ class TeacherService:
                     Attendance.student_id == student.id
                 ).distinct().all()
                 
+                # Also get courses from TaskCompletion
+                task_courses = db.query(Course).join(TaskCompletion).filter(
+                    TaskCompletion.student_id == student.id
+                ).distinct().all()
+                
+                # Combine and deduplicate courses by ID
+                all_courses_dict = {}
+                for course in student_courses + task_courses:
+                    all_courses_dict[course.id] = course
+                all_courses = list(all_courses_dict.values())
+                
                 # Calculate progress and attendance
                 progress = self._calculate_student_progress(student.id, db)
                 attendance = self._calculate_student_attendance(student.id, db)
@@ -333,8 +344,8 @@ class TeacherService:
                     "id": student.id,
                     "name": student.name,
                     "email": student.email,
-                    "courses": [{"name": course.name} for course in student_courses],
-                    "course_ids": [str(course.id) for course in student_courses],
+                    "courses": [{"name": course.name} for course in all_courses],
+                    "course_ids": [str(course.id) for course in all_courses],
                     "cluster_group": cluster.cluster_label if cluster else None,
                     "overall_progress": progress,
                     "attendance_rate": attendance,
@@ -759,7 +770,7 @@ class TeacherService:
             self.logger.error(f"Error counting overdue tasks: {e}")
             return 0
     
-    def _calculate_student_progress(self, student_id: str, db: Session) -> float:
+    def _calculate_student_progress(self, student_id: str, db: SQLAlchemySession) -> float:
         """Calculate overall progress for a student."""
         try:
             # Get all task completions for the student
@@ -780,7 +791,7 @@ class TeacherService:
             self.logger.error(f"Error calculating student progress: {e}")
             return 0.0
     
-    def _calculate_student_attendance(self, student_id: str, db: Session) -> float:
+    def _calculate_student_attendance(self, student_id: str, db: SQLAlchemySession) -> float:
         """Calculate attendance rate for a student."""
         try:
             # Get all attendance records for the student
@@ -793,7 +804,7 @@ class TeacherService:
             
             # Calculate attendance rate
             total_lessons = len(attendances)
-            attended_lessons = sum(1 for a in attendances if a.status == "present")
+            attended_lessons = sum(1 for a in attendances if a.attended == True)
             
             return round((attended_lessons / total_lessons) * 100, 1)
             

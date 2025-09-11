@@ -187,10 +187,7 @@
                                         data-name="{{ student.name|lower }}"
                                         data-id="{{ student.id|lower }}">
                                         <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="bi bi-person-circle text-primary me-2"></i>
-                                                <strong>{{ student.id }}</strong>
-                                            </div>
+                                            <strong>{{ student.id }}</strong>
                                         </td>
                                         <td>
                                             <div>
@@ -223,7 +220,7 @@
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <span class="me-2">{{ student.attendance_rate }}%</span>
+                                                <span class="me-2">{{ "%.1f"|format(student.attendance_rate) }}%</span>
                                                 {% if student.attendance_rate >= 80 %}
                                                     <i class="bi bi-check-circle text-success"></i>
                                                 {% elif student.attendance_rate >= 60 %}
@@ -244,14 +241,11 @@
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <button class="btn btn-outline-primary btn-sm" onclick="viewStudent('{{ student.id }}')">
+                                                <button class="btn btn-outline-primary btn-sm" onclick="viewStudent('{{ student.id }}')" title="Просмотр профиля">
                                                     <i class="bi bi-eye"></i>
                                                 </button>
-                                                <button class="btn btn-outline-info btn-sm" onclick="viewProgress('{{ student.id }}')">
+                                                <button class="btn btn-outline-info btn-sm" onclick="viewProgress('{{ student.id }}')" title="Прогресс">
                                                     <i class="bi bi-graph-up"></i>
-                                                </button>
-                                                <button class="btn btn-outline-warning btn-sm" onclick="sendMessage('{{ student.id }}')">
-                                                    <i class="bi bi-chat"></i>
                                                 </button>
                                             </div>
                                         </td>
@@ -381,7 +375,10 @@
                 qualityElement.className = 'badge bg-danger';
             }
             
-            document.getElementById('last-update').textContent = new Date(stats.last_used).toLocaleString('ru-RU');
+            // Конвертируем время в GMT+5
+            const lastUpdate = new Date(stats.last_used);
+            const gmtPlus5 = new Date(lastUpdate.getTime() + (5 * 60 * 60 * 1000));
+            document.getElementById('last-update').textContent = gmtPlus5.toLocaleString('ru-RU');
         }
 
         // Обновление графика
@@ -506,15 +503,13 @@
     }
     
     function viewStudent(studentId) {
-        window.open(`/student/?student_id=${studentId}`, '_blank');
+        // Пока что показываем alert, в будущем будет переход на страницу профиля студента
+        alert(`Просмотр профиля студента ${studentId} - функция будет реализована в следующих итерациях`);
     }
     
     function viewProgress(studentId) {
-        window.open(`/student/progress?student_id=${studentId}`, '_blank');
-    }
-    
-    function sendMessage(studentId) {
-        alert(`Функция отправки сообщения студенту ${studentId} будет реализована в следующих итерациях`);
+        // Пока что показываем alert, в будущем будет переход на страницу прогресса студента
+        alert(`Просмотр прогресса студента ${studentId} - функция будет реализована в следующих итерациях`);
     }
     
     function exportStudents() {

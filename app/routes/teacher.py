@@ -159,55 +159,7 @@ async def course_details(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.get("/students", response_class=HTMLResponse)
-async def students_overview(
-    request: Request,
-    db: Session = Depends(get_session)
-) -> HTMLResponse:
-    """
-    Students overview with risk analysis.
-    
-    Args:
-        request: FastAPI request object
-        db: Database session
-        
-    Returns:
-        HTML response with students overview
-    """
-    logger.info("Students overview requested")
-    
-    try:
-        # Get all students with their progress
-        students = db.query(Student).all()
-        
-        student_data = []
-        for student in students:
-            # Get student progress
-            progress = teacher_service.metrics_service.calculate_student_progress(student.id, db)
-            
-            if "error" not in progress:
-                student_data.append({
-                    "student_id": student.id,
-                    "student_name": student.name or f"Студент {student.id}",
-                    "overall_progress": progress.get("overall_progress", 0),
-                    "attendance_rate": progress.get("attendance", {}).get("percentage", 0),
-                    "completion_rate": progress.get("tasks", {}).get("percentage", 0),
-                    "courses_count": len(progress.get("courses", [])),
-                    "status": "high_risk" if progress.get("overall_progress", 0) < 40 else "medium_risk" if progress.get("overall_progress", 0) < 70 else "good"
-                })
-        
-        # Sort by overall progress
-        student_data.sort(key=lambda x: x["overall_progress"])
-        
-        return templates.TemplateResponse("teacher/students.html", {
-            "request": request,
-            "title": "Обзор студентов",
-            "students": student_data
-        })
-        
-    except Exception as e:
-        logger.error(f"Error loading students overview: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+# Удален дублирующий маршрут /students
 
 
 @router.get("/api/dashboard")
