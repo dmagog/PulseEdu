@@ -782,11 +782,18 @@ class TeacherService:
             if not completions:
                 return 0.0
             
-            # Calculate average completion rate
-            total_tasks = len(completions)
-            completed_tasks = sum(1 for c in completions if c.status == "Выполнено")
+            # Calculate completion rate - only count tasks that are not "missing"
+            assigned_tasks = [c for c in completions if c.status != "missing"]
+            total_tasks = len(assigned_tasks)
+            completed_tasks = sum(1 for c in assigned_tasks if c.status == "Выполнено")
             
-            return round((completed_tasks / total_tasks) * 100, 1)
+            if total_tasks == 0:
+                return 0.0
+            
+            progress = (completed_tasks / total_tasks) * 100
+            result = round(progress, 1)
+            
+            return result
             
         except Exception as e:
             self.logger.error(f"Error calculating student progress: {e}")
