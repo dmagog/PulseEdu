@@ -22,7 +22,8 @@ class TestStudentService:
     def test_get_student_assignments_with_data(self, isolated_db_session):
         """Test getting assignments for student with courses."""
         # Create test data
-        student_id = f"test_student_{datetime.now().timestamp()}"
+        import uuid
+        student_id = f"test_student_{uuid.uuid4().hex[:8]}"
         course_id = int(datetime.now().timestamp()) % 1000000
         task_id = int(datetime.now().timestamp()) % 1000000
 
@@ -31,18 +32,21 @@ class TestStudentService:
 
         student = Student(id=student_id, name="Тестовый Студент")
         isolated_db_session.add(student)
+        isolated_db_session.flush()  # Force SQLAlchemy to process the student first
 
         # Create course
         from app.models.student import Course
 
         course = Course(id=course_id, name="Тестовый курс")
         isolated_db_session.add(course)
+        isolated_db_session.flush()  # Force SQLAlchemy to process the course
 
         # Create task
         from app.models.student import Task
 
         task = Task(id=task_id, name="Тестовое задание", course_id=course_id)
         isolated_db_session.add(task)
+        isolated_db_session.flush()  # Force SQLAlchemy to process the task
 
         # Create task completion
         from app.models.student import TaskCompletion
@@ -98,7 +102,8 @@ class TestMetricsService:
     def test_calculate_student_progress_with_data(self, isolated_db_session):
         """Test calculating progress for student with completed tasks."""
         # Create test data
-        student_id = f"test_student_{datetime.now().timestamp()}"
+        import uuid
+        student_id = f"test_student_{uuid.uuid4().hex[:8]}"
         course_id = int(datetime.now().timestamp()) % 1000000
         task_id = int(datetime.now().timestamp()) % 1000000
 
@@ -107,18 +112,21 @@ class TestMetricsService:
 
         student = Student(id=student_id, name="Тестовый Студент")
         isolated_db_session.add(student)
+        isolated_db_session.flush()  # Force SQLAlchemy to process the student first
 
         # Create course
         from app.models.student import Course
 
         course = Course(id=course_id, name="Тестовый курс")
         isolated_db_session.add(course)
+        isolated_db_session.flush()  # Force SQLAlchemy to process the course
 
         # Create task
         from app.models.student import Task
 
         task = Task(id=task_id, name="Тестовое задание", course_id=course_id)
         isolated_db_session.add(task)
+        isolated_db_session.flush()  # Force SQLAlchemy to process the task
 
         # Create task completion
         from app.models.student import TaskCompletion

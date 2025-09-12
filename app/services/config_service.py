@@ -4,7 +4,7 @@ Configuration service for reading settings from environment and database.
 
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 from app.models.admin import AdminSetting
@@ -69,7 +69,7 @@ class ConfigService:
                     logger.warning(f"Invalid APP_FAKE_NOW format: {fake_now_str}, using real time")
 
         # Return real time
-        return datetime.utcnow()
+        return datetime.now(timezone.utc)
 
     def is_fake_time_enabled(self) -> bool:
         """Check if fake time mode is enabled."""
