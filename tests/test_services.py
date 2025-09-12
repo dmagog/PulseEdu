@@ -22,9 +22,9 @@ class TestStudentService:
     def test_get_student_assignments_with_data(self, isolated_db_session):
         """Test getting assignments for student with courses."""
         # Create test data
-        student_id = f"test_student_{datetime.now().timestamp()}"
-        course_id = int(datetime.now().timestamp()) % 1000000
-        task_id = int(datetime.now().timestamp()) % 1000000
+        student_id = "test_student_001"
+        course_id = 1001
+        task_id = 2001
 
         # Create student
         from app.models.student import Student
@@ -98,9 +98,9 @@ class TestMetricsService:
     def test_calculate_student_progress_with_data(self, isolated_db_session):
         """Test calculating progress for student with completed tasks."""
         # Create test data
-        student_id = f"test_student_{datetime.now().timestamp()}"
-        course_id = int(datetime.now().timestamp()) % 1000000
-        task_id = int(datetime.now().timestamp()) % 1000000
+        student_id = "test_student_002"
+        course_id = 1002
+        task_id = 2002
 
         # Create student
         from app.models.student import Student

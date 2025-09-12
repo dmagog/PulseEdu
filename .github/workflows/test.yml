@@ -47,6 +47,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
+    - name: Code quality checks (non-blocking)
+      continue-on-error: true
+      run: |
+        echo "🔍 Running code quality checks..."
+        python -m flake8 app/ --count --statistics || echo "⚠️ Flake8 issues found (non-blocking)"
+        python -m black --check app/ || echo "⚠️ Black formatting issues found (non-blocking)"
+        python -m isort --check-only app/ || echo "⚠️ Import sorting issues found (non-blocking)"
+        python -m mypy app/ || echo "⚠️ MyPy type issues found (non-blocking)"
+        python -m bandit -r app/ -ll || echo "⚠️ Bandit security issues found (non-blocking)"
+        echo "✅ Code quality checks completed (non-blocking)"
+    
     - name: Run full test suite (release only)
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
