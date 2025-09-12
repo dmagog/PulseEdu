@@ -110,7 +110,7 @@ bandit -r app/ -ll
 # Run tests based on mode
 if [ "$MODE" = "release" ]; then
     print_status "Running FULL test suite..."
-    if python -m pytest tests/ --cov=app -v; then
+    if python3 -m pytest tests/ --cov=app -v; then
         print_status "All tests passed with coverage"
     else
         print_error "Some tests failed"
