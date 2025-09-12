@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+
+{% block title %}Мониторинг ML-кластеризации{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-graph-up-arrow text-primary"></i>
+                    Мониторинг ML-кластеризации
+                </h1>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="refreshData()">
+                        <i class="bi bi-arrow-clockwise"></i> Обновить
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="exportReport()">
+                        <i class="bi bi-download"></i> Экспорт
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Общая статистика -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Всего запусков</h6>
+                            <h3 class="mb-0" id="total-runs">-</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-play-circle fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Успешных</h6>
+                            <h3 class="mb-0" id="successful-runs">-</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check-circle fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Среднее качество</h6>
+                            <h3 class="mb-0" id="avg-quality">-</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-star fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Активных алертов</h6>
+                            <h3 class="mb-0" id="active-alerts">-</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-exclamation-triangle fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Алерты -->
+    <div class="row mb-4" id="alerts-section" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                        Активные алерты
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="alerts-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Производительность алгоритмов -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-speedometer2"></i>
+                        Производительность алгоритмов
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Алгоритм</th>
+                                    <th>Запусков</th>
+                                    <th>Успешных</th>
+                                    <th>Среднее качество</th>
+                                    <th>Среднее время (с)</th>
+                                    <th>Последний запуск</th>
+                                </tr>
+                            </thead>
+                            <tbody id="algorithms-table">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        <i class="bi bi-hourglass-split"></i> Загрузка данных...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- История качества по курсам -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up"></i>
+                        История качества кластеризации
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <select class="form-select" id="course-select">
+                                <option value="">Все курсы</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" id="period-select">
+                                <option value="7">Последние 7 дней</option>
+                                <option value="30" selected>Последние 30 дней</option>
+                                <option value="90">Последние 90 дней</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-primary" onclick="loadQualityHistory()">
+                                <i class="bi bi-search"></i> Загрузить
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Курс</th>
+                                    <th>Алгоритм</th>
+                                    <th>Качество</th>
+                                    <th>Кластеров</th>
+                                    <th>Студентов</th>
+                                    <th>Время (с)</th>
+                                    <th>Дата</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quality-history-table">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">
+                                        <i class="bi bi-hourglass-split"></i> Выберите параметры и загрузите данные...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для разрешения алерта -->
+<div class="modal fade" id="resolveAlertModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Разрешить алерт</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="resolve-alert-form">
+                    <input type="hidden" id="alert-id">
+                    <div class="mb-3">
+                        <label for="resolution-notes" class="form-label">Примечания к разрешению</label>
+                        <textarea class="form-control" id="resolution-notes" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="resolveAlert()">Разрешить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentData = {};
+
+// Загрузка данных при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    loadPerformanceSummary();
+    loadAlerts();
+    loadCourses();
+});
+
+// Загрузка общей статистики
+async function loadPerformanceSummary() {
+    try {
+        const response = await fetch('/api/ml-monitoring/performance-summary?days=30');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            currentData.performance = data.performance_summary;
+            updateSummaryCards(data.performance_summary);
+            updateAlgorithmsTable(data.performance_summary.algorithms);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки статистики:', error);
+    }
+}
+
+// Обновление карточек статистики
+function updateSummaryCards(performance) {
+    const summary = performance.summary;
+    
+    document.getElementById('total-runs').textContent = summary.total_runs || 0;
+    document.getElementById('successful-runs').textContent = summary.total_successful || 0;
+    document.getElementById('avg-quality').textContent = (summary.avg_quality_score || 0).toFixed(3);
+}
+
+// Обновление таблицы алгоритмов
+function updateAlgorithmsTable(algorithms) {
+    const tbody = document.getElementById('algorithms-table');
+    tbody.innerHTML = '';
+    
+    if (Object.keys(algorithms).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Нет данных</td></tr>';
+        return;
+    }
+    
+    for (const [algorithm, stats] of Object.entries(algorithms)) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><span class="badge bg-primary">${algorithm}</span></td>
+            <td>${stats.total_runs}</td>
+            <td>${stats.successful_runs}</td>
+            <td>${stats.avg_silhouette_score.toFixed(3)}</td>
+            <td>${stats.avg_processing_time.toFixed(2)}</td>
+            <td>${new Date(stats.last_used).toLocaleString('ru-RU')}</td>
+        `;
+        tbody.appendChild(row);
+    }
+}
+
+// Загрузка алертов
+async function loadAlerts() {
+    try {
+        const response = await fetch('/api/ml-monitoring/alerts');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            updateAlertsSection(data.active_alerts, data.alert_summary);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки алертов:', error);
+    }
+}
+
+// Обновление секции алертов
+function updateAlertsSection(alerts, summary) {
+    document.getElementById('active-alerts').textContent = summary.total;
+    
+    const alertsSection = document.getElementById('alerts-section');
+    const alertsList = document.getElementById('alerts-list');
+    
+    if (summary.total === 0) {
+        alertsSection.style.display = 'none';
+        return;
+    }
+    
+    alertsSection.style.display = 'block';
+    alertsList.innerHTML = '';
+    
+    alerts.forEach(alert => {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${getAlertClass(alert.alert_level)} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <strong>Курс ${alert.course_id}</strong> - ${alert.message}
+                    <br>
+                    <small class="text-muted">
+                        ${new Date(alert.created_at).toLocaleString('ru-RU')}
+                    </small>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" 
+                        onclick="showResolveModal(${alert.id})">
+                    Разрешить
+                </button>
+            </div>
+        `;
+        alertsList.appendChild(alertDiv);
+    });
+}
+
+// Получение класса для алерта
+function getAlertClass(level) {
+    switch (level) {
+        case 'critical': return 'danger';
+        case 'error': return 'danger';
+        case 'warning': return 'warning';
+        default: return 'info';
+    }
+}
+
+// Загрузка списка курсов
+async function loadCourses() {
+    try {
+        const response = await fetch('/api/courses');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            const select = document.getElementById('course-select');
+            data.courses.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course.id;
+                option.textContent = course.name;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки курсов:', error);
+    }
+}
+
+// Загрузка истории качества
+async function loadQualityHistory() {
+    const courseId = document.getElementById('course-select').value;
+    const days = document.getElementById('period-select').value;
+    
+    try {
+        let url = '/api/ml-monitoring/performance-summary?days=' + days;
+        if (courseId) {
+            url = `/api/ml-monitoring/course/${courseId}/quality-history?days=${days}`;
+        }
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            updateQualityHistoryTable(data.quality_history || []);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки истории:', error);
+    }
+}
+
+// Обновление таблицы истории качества
+function updateQualityHistoryTable(history) {
+    const tbody = document.getElementById('quality-history-table');
+    tbody.innerHTML = '';
+    
+    if (history.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет данных</td></tr>';
+        return;
+    }
+    
+    history.forEach(record => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>Курс ${record.course_id}</td>
+            <td><span class="badge bg-secondary">${record.algorithm_used}</span></td>
+            <td>
+                <span class="badge bg-${getQualityClass(record.silhouette_score)}">
+                    ${record.silhouette_score.toFixed(3)}
+                </span>
+            </td>
+            <td>${record.n_clusters}</td>
+            <td>${record.clustered_students}/${record.total_students}</td>
+            <td>${record.processing_time_seconds.toFixed(2)}</td>
+            <td>${new Date(record.created_at).toLocaleString('ru-RU')}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Получение класса для качества
+function getQualityClass(score) {
+    if (score >= 0.5) return 'success';
+    if (score >= 0.3) return 'warning';
+    return 'danger';
+}
+
+// Показать модальное окно разрешения алерта
+function showResolveModal(alertId) {
+    document.getElementById('alert-id').value = alertId;
+    document.getElementById('resolution-notes').value = '';
+    new bootstrap.Modal(document.getElementById('resolveAlertModal')).show();
+}
+
+// Разрешить алерт
+async function resolveAlert() {
+    const alertId = document.getElementById('alert-id').value;
+    const notes = document.getElementById('resolution-notes').value;
+    
+    if (!notes.trim()) {
+        alert('Пожалуйста, укажите примечания к разрешению');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/ml-monitoring/alerts/${alertId}/resolve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ resolution_notes: notes })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            bootstrap.Modal.getInstance(document.getElementById('resolveAlertModal')).hide();
+            loadAlerts(); // Перезагрузить алерты
+        } else {
+            alert('Ошибка при разрешении алерта: ' + data.detail);
+        }
+    } catch (error) {
+        console.error('Ошибка разрешения алерта:', error);
+        alert('Ошибка при разрешении алерта');
+    }
+}
+
+// Обновить все данные
+function refreshData() {
+    loadPerformanceSummary();
+    loadAlerts();
+    loadQualityHistory();
+}
+
+// Экспорт отчета
+function exportReport() {
+    // TODO: Реализовать экспорт отчета
+    alert('Функция экспорта будет реализована в следующих версиях');
+}
+</script>
+{% endblock %}
+

@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="bi bi-trending-up"></i> Тренды и прогнозы</h1>
+            <p class="text-muted">Анализ трендов в образовательных программах и прогнозирование</p>
+        </div>
+    </div>
+
+    <!-- Внутренняя навигация -->
+    {% include "rop/_navigation.html" %}
+
+    <!-- Trends Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <select class="form-select" id="programFilter">
+                                <option value="">Все программы</option>
+                                {% for program in programs %}
+                                <option value="{{ program.id }}">{{ program.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="periodFilter">
+                                <option value="6months">6 месяцев</option>
+                                <option value="1year" selected>1 год</option>
+                                <option value="2years">2 года</option>
+                                <option value="3years">3 года</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="metricFilter">
+                                <option value="all">Все метрики</option>
+                                <option value="enrollment">Поступление</option>
+                                <option value="completion">Завершение</option>
+                                <option value="performance">Успеваемость</option>
+                                <option value="satisfaction">Удовлетворенность</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary" onclick="updateTrends()">
+                                <i class="bi bi-arrow-clockwise"></i> Обновить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Trends -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-trending-up text-success" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Рост поступлений</h5>
+                    <h3 class="text-success">+{{ trends.enrollment_growth }}%</h3>
+                    <small class="text-muted">за последний год</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up text-primary" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Улучшение успеваемости</h5>
+                    <h3 class="text-primary">+{{ trends.performance_improvement }}%</h3>
+                    <small class="text-muted">средний балл</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-emoji-smile text-info" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Удовлетворенность</h5>
+                    <h3 class="text-info">{{ trends.satisfaction_score }}/5</h3>
+                    <small class="text-muted">рейтинг студентов</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-briefcase text-warning" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Трудоустройство</h5>
+                    <h3 class="text-warning">{{ trends.employment_rate }}%</h3>
+                    <small class="text-muted">выпускников</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trends Charts -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-graph-up"></i> Тренд поступлений</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="enrollmentTrendChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-check-circle"></i> Тренд завершения программ</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="completionTrendChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Trends -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-bar-chart"></i> Успеваемость по программам</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="performanceChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-pie-chart"></i> Распределение оценок</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="gradesDistributionChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Predictions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-crystal-ball"></i> Прогнозы на следующий период</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="prediction-card p-3 border rounded">
+                                <h6><i class="bi bi-people text-primary"></i> Поступления</h6>
+                                <p class="mb-1">Ожидается рост на <strong>{{ predictions.enrollment_growth }}%</strong></p>
+                                <small class="text-muted">Прогноз: {{ predictions.enrollment_forecast }} студентов</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="prediction-card p-3 border rounded">
+                                <h6><i class="bi bi-graduation-cap text-success"></i> Выпуск</h6>
+                                <p class="mb-1">Ожидается <strong>{{ predictions.graduation_rate }}%</strong> выпускников</p>
+                                <small class="text-muted">Прогноз: {{ predictions.graduation_forecast }} выпускников</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="prediction-card p-3 border rounded">
+                                <h6><i class="bi bi-briefcase text-info"></i> Трудоустройство</h6>
+                                <p class="mb-1">Ожидается <strong>{{ predictions.employment_rate }}%</strong> трудоустройство</p>
+                                <small class="text-muted">Прогноз: {{ predictions.employment_forecast }} трудоустроенных</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Enrollment Trend Chart
+    const enrollmentTrendCtx = document.getElementById('enrollmentTrendChart').getContext('2d');
+    new Chart(enrollmentTrendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ enrollment_dates|tojson }},
+            datasets: [{
+                label: 'Поступления',
+                data: {{ enrollment_values|tojson }},
+                borderColor: 'rgba(40, 167, 69, 1)',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Completion Trend Chart
+    const completionTrendCtx = document.getElementById('completionTrendChart').getContext('2d');
+    new Chart(completionTrendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ completion_dates|tojson }},
+            datasets: [{
+                label: 'Завершение (%)',
+                data: {{ completion_values|tojson }},
+                borderColor: 'rgba(0, 123, 255, 1)',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    // Performance Chart
+    const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(performanceCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ program_names|tojson }},
+            datasets: [{
+                label: 'Средний балл',
+                data: {{ performance_values|tojson }},
+                backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            }
+        }
+    });
+
+    // Grades Distribution Chart
+    const gradesDistributionCtx = document.getElementById('gradesDistributionChart').getContext('2d');
+    new Chart(gradesDistributionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Отлично (5)', 'Хорошо (4)', 'Удовлетворительно (3)', 'Неудовлетворительно (2)'],
+            datasets: [{
+                data: [{{ grades_distribution.excellent }}, {{ grades_distribution.good }}, {{ grades_distribution.satisfactory }}, {{ grades_distribution.unsatisfactory }}],
+                backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    function updateTrends() {
+        // TODO: Implement trends update
+        alert('Функция обновления трендов будет реализована в следующих итерациях');
+    }
+</script>
+{% endblock %}

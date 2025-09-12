@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1>{{ title }}</h1>
+                
+                <!-- Upload Form -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Загрузка Excel файла</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Выберите Excel файл</label>
+                                <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls" required>
+                                <div class="form-text">Поддерживаются файлы .xlsx и .xls</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="uploadBtn">
+                                <span class="spinner-border spinner-border-sm d-none" id="uploadSpinner"></span>
+                                Загрузить файл
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Upload Result -->
+                <div class="alert d-none" id="uploadResult"></div>
+                
+                <!-- Jobs List -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>История импорта</h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadJobs()">Обновить</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="jobsList">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <!-- Help -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6>Помощь</h6>
+                    </div>
+                    <div class="card-body">
+                        <h6>Поддерживаемые форматы:</h6>
+                        <ul>
+                            <li>.xlsx (Excel 2007+)</li>
+                            <li>.xls (Excel 97-2003)</li>
+                        </ul>
+                        
+                        <h6>Ожидаемые колонки:</h6>
+                        <ul>
+                            <li><code>student_id</code> - ID студента</li>
+                            <li><code>name</code> - ФИО</li>
+                            <li><code>email</code> - Email</li>
+                            <li><code>course</code> - Название курса</li>
+                            <li><code>grade</code> - Оценка</li>
+                            <li><code>date</code> - Дата</li>
+                        </ul>
+                        
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>Примечание:</strong> Импорт выполняется в фоновом режиме. 
+                                Статус можно отслеживать в таблице ниже.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Upload form handling
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('file');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadSpinner = document.getElementById('uploadSpinner');
+            const uploadResult = document.getElementById('uploadResult');
+            
+            if (!fileInput.files[0]) {
+                showResult('error', 'Пожалуйста, выберите файл');
+                return;
+            }
+            
+            // Show loading state
+            uploadBtn.disabled = true;
+            uploadSpinner.classList.remove('d-none');
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                
+                const response = await fetch('/import/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult('success', `Файл загружен успешно! Job ID: ${result.job_id}`);
+                    fileInput.value = '';
+                    loadJobs(); // Refresh jobs list
+                } else {
+                    showResult('error', result.detail || 'Ошибка загрузки файла');
+                }
+            } catch (error) {
+                showResult('error', 'Ошибка сети: ' + error.message);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadSpinner.classList.add('d-none');
+            }
+        });
+        
+        function showResult(type, message) {
+            const resultDiv = document.getElementById('uploadResult');
+            resultDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
+            resultDiv.textContent = message;
+            resultDiv.classList.remove('d-none');
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                resultDiv.classList.add('d-none');
+            }, 5000);
+        }
+        
+        // Load jobs list
+        async function loadJobs() {
+            const jobsList = document.getElementById('jobsList');
+            
+            try {
+                const response = await fetch('/import/jobs');
+                const result = await response.json();
+                
+                if (response.ok) {
+                    displayJobs(result.jobs);
+                } else {
+                    jobsList.innerHTML = '<div class="alert alert-danger">Ошибка загрузки списка задач</div>';
+                }
+            } catch (error) {
+                jobsList.innerHTML = '<div class="alert alert-danger">Ошибка сети</div>';
+            }
+        }
+        
+        function displayJobs(jobs) {
+            const jobsList = document.getElementById('jobsList');
+            
+            if (jobs.length === 0) {
+                jobsList.innerHTML = '<div class="text-muted">Нет задач импорта</div>';
+                return;
+            }
+            
+            let html = '<div class="table-responsive"><table class="table table-sm">';
+            html += '<thead><tr><th>Файл</th><th>Статус</th><th>Строк</th><th>Ошибок</th><th>Создано</th><th>Действия</th></tr></thead>';
+            html += '<tbody>';
+            
+            jobs.forEach(job => {
+                const statusClass = getStatusClass(job.status);
+                const statusText = getStatusText(job.status);
+                const createdAt = new Date(job.created_at).toLocaleString('ru-RU');
+                
+                html += `
+                    <tr>
+                        <td>${job.original_filename}</td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td>${job.total_rows || '-'}</td>
+                        <td>${job.error_rows || 0}</td>
+                        <td>${createdAt}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewJobDetails('${job.job_id}')">
+                                Детали
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            jobsList.innerHTML = html;
+        }
+        
+        function getStatusClass(status) {
+            switch (status) {
+                case 'pending': return 'bg-warning';
+                case 'processing': return 'bg-info';
+                case 'completed': return 'bg-success';
+                case 'failed': return 'bg-danger';
+                default: return 'bg-secondary';
+            }
+        }
+        
+        function getStatusText(status) {
+            switch (status) {
+                case 'pending': return 'Ожидает';
+                case 'processing': return 'Обрабатывается';
+                case 'completed': return 'Завершено';
+                case 'failed': return 'Ошибка';
+                default: return status;
+            }
+        }
+        
+        async function viewJobDetails(jobId) {
+            try {
+                const response = await fetch(`/import/jobs/${jobId}`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Show job details in modal or new page
+                    alert(`Job ID: ${result.job.job_id}\nStatus: ${result.job.status}\nErrors: ${result.job.error_rows}`);
+                } else {
+                    alert('Ошибка загрузки деталей задачи');
+                }
+            } catch (error) {
+                alert('Ошибка сети');
+            }
+        }
+        
+        // Load jobs on page load
+        document.addEventListener('DOMContentLoaded', loadJobs);
+    </script>
+{% endblock %}

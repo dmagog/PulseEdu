@@ -1,0 +1,41 @@
+name: Quick Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  quick-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Quick syntax check
+      run: |
+        python -m py_compile app/main.py
+        echo "✅ Syntax check passed"
+    
+    - name: Run basic tests
+      run: |
+        python -m pytest tests/test_basic.py tests/test_health.py -v
+    
+    - name: Quick Summary
+      run: |
+        echo "🚀 Quick check completed"
+        echo "📊 Repository: ${{ github.repository }}"
+        echo "🌿 Branch: ${{ github.ref_name }}"
+        echo "👤 Actor: ${{ github.actor }}"
+        echo "💡 For full quality checks, create a release tag"

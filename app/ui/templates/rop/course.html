@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - PulseEdu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">PulseEdu</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/rop/">РОП</a>
+                <a class="nav-link" href="/teacher/">Преподаватель</a>
+                <a class="nav-link" href="/admin/">Админ</a>
+                <a class="nav-link" href="/import/">Импорт</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1><i class="bi bi-graph-up"></i> {{ course.name }}</h1>
+                <p class="text-muted">Аналитика курса и тренды</p>
+            </div>
+        </div>
+
+        <!-- Course Trends Charts -->
+        <div class="row mb-4">
+            <!-- 7-Day Trends -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-graph-up"></i> Тренды за 7 дней</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="courseTrends7dChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 30-Day Trends -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-graph-up"></i> Тренды за 30 дней</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="courseTrends30dChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Statistics -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-bar-chart"></i> Статистика курса</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-primary">{{ trends_7d.daily_data | length }}</h4>
+                                    <small class="text-muted">Дней аналитики (7д)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-success">{{ trends_7d.daily_data | sum(attribute='completions') }}</h4>
+                                    <small class="text-muted">Выполнений за 7 дней</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-info">{{ trends_7d.daily_data | sum(attribute='attendance') }}</h4>
+                                    <small class="text-muted">Посещений за 7 дней</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-warning">{{ trends_30d.daily_data | length }}</h4>
+                                    <small class="text-muted">Дней аналитики (30д)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h6><i class="bi bi-link"></i> Навигация</h6>
+                        <div class="d-grid gap-2 d-md-flex">
+                            <a href="/teacher/course/{{ course.id }}" class="btn btn-primary">
+                                <i class="bi bi-eye"></i> Детальный просмотр
+                            </a>
+                            <a href="/teacher/" class="btn btn-outline-primary">
+                                <i class="bi bi-arrow-left"></i> Назад к панели преподавателя
+                            </a>
+                            <a href="/rop/" class="btn btn-outline-secondary">
+                                <i class="bi bi-graph-up"></i> Дашборд РОП
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Course 7-Day Trends Chart
+        const courseTrends7dCtx = document.getElementById('courseTrends7dChart').getContext('2d');
+        const courseTrends7dChart = new Chart(courseTrends7dCtx, {
+            type: 'line',
+            data: {
+                labels: {{ trends_7d.daily_data | map(attribute='date') | list | tojson }},
+                datasets: [{
+                    label: 'Выполнения',
+                    data: {{ trends_7d.daily_data | map(attribute='completions') | list | tojson }},
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Посещения',
+                    data: {{ trends_7d.daily_data | map(attribute='attendance') | list | tojson }},
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Course 30-Day Trends Chart
+        const courseTrends30dCtx = document.getElementById('courseTrends30dChart').getContext('2d');
+        const courseTrends30dChart = new Chart(courseTrends30dCtx, {
+            type: 'line',
+            data: {
+                labels: {{ trends_30d.daily_data | map(attribute='date') | list | tojson }},
+                datasets: [{
+                    label: 'Выполнения',
+                    data: {{ trends_30d.daily_data | map(attribute='completions') | list | tojson }},
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Посещения',
+                    data: {{ trends_30d.daily_data | map(attribute='attendance') | list | tojson }},
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Auto-refresh course trends every 5 minutes
+        setInterval(function() {
+            Promise.all([
+                fetch(`/rop/api/course/{{ course.id }}/trends/7`),
+                fetch(`/rop/api/course/{{ course.id }}/trends/30`)
+            ])
+            .then(responses => Promise.all(responses.map(r => r.json())))
+            .then(data => {
+                if (data[0].status === 'success' && data[1].status === 'success') {
+                    // Update 7-day chart
+                    courseTrends7dChart.data.labels = data[0].data.daily_data.map(d => d.date);
+                    courseTrends7dChart.data.datasets[0].data = data[0].data.daily_data.map(d => d.completions);
+                    courseTrends7dChart.data.datasets[1].data = data[0].data.daily_data.map(d => d.attendance);
+                    courseTrends7dChart.update();
+                    
+                    // Update 30-day chart
+                    courseTrends30dChart.data.labels = data[1].data.daily_data.map(d => d.date);
+                    courseTrends30dChart.data.datasets[0].data = data[1].data.daily_data.map(d => d.completions);
+                    courseTrends30dChart.data.datasets[1].data = data[1].data.daily_data.map(d => d.attendance);
+                    courseTrends30dChart.update();
+                }
+            })
+            .catch(error => console.log('Error refreshing course trends:', error));
+        }, 300000); // 5 minutes
+    </script>
+</body>
+</html>

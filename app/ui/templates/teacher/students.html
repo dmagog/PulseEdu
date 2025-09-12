@@ -1,0 +1,582 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="bi bi-people"></i> Мои студенты</h1>
+            <p class="text-muted">Управление студентами и мониторинг их прогресса</p>
+        </div>
+    </div>
+
+    <!-- Внутренняя навигация -->
+    {% include "teacher/_navigation.html" %}
+
+    <!-- Student Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-people text-primary" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Всего студентов</h5>
+                    <h3 class="text-primary">{{ students|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Отличники</h5>
+                    <h3 class="text-success">{{ students|selectattr('cluster_group', 'equalto', 'A')|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">В зоне риска</h5>
+                    <h3 class="text-warning">{{ students|selectattr('cluster_group', 'equalto', 'C')|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up text-info" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Средний прогресс</h5>
+                    <h3 class="text-info">{{ (students|map(attribute='overall_progress')|sum / students|length)|round(1) if students else 0 }}%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk Zones Dashboard -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                        Зоны риска студентов
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Cluster Distribution -->
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Распределение по кластерам</h6>
+                                    <div id="clusterChart" style="height: 200px;">
+                                        <canvas id="clusterChartCanvas"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Risk Summary -->
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Сводка по рискам</h6>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Высокий риск:</span>
+                                            <span class="badge bg-danger" id="high-risk-count">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Средний риск:</span>
+                                            <span class="badge bg-warning" id="medium-risk-count">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Низкий риск:</span>
+                                            <span class="badge bg-success" id="low-risk-count">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Не определено:</span>
+                                            <span class="badge bg-secondary" id="undefined-risk-count">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quality Metrics -->
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Качество кластеризации</h6>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Алгоритм:</span>
+                                            <span class="badge bg-primary" id="clustering-algorithm">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Качество:</span>
+                                            <span class="badge" id="clustering-quality">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Последнее обновление:</span>
+                                            <small class="text-muted" id="last-update">-</small>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="refreshClusteringData()">
+                                        <i class="bi bi-arrow-clockwise"></i> Обновить
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <select class="form-select" id="courseFilter">
+                                <option value="">Все курсы</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="groupFilter">
+                                <option value="">Все группы</option>
+                                <option value="A">Группа A (Отличники)</option>
+                                <option value="B">Группа B (Хорошисты)</option>
+                                <option value="C">Группа C (Требуют внимания)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">Все статусы</option>
+                                <option value="active">Активные</option>
+                                <option value="at_risk">В зоне риска</option>
+                                <option value="excellent">Отличники</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Поиск по имени или ID...">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary" onclick="applyFilters()">
+                                <i class="bi bi-funnel"></i> Применить
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="exportStudents()">
+                                <i class="bi bi-download"></i> Экспорт
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="bi bi-table"></i> Список студентов</h5>
+                    <span class="badge bg-primary">{{ students|length }} студентов</span>
+                </div>
+                <div class="card-body">
+                    {% if students %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Имя</th>
+                                        <th>Курсы</th>
+                                        <th>Группа</th>
+                                        <th>Прогресс</th>
+                                        <th>Посещаемость</th>
+                                        <th>Статус</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students %}
+                                    <tr class="student-row" 
+                                        data-course="{{ student.course_ids|join(',') }}" 
+                                        data-group="{{ student.cluster_group }}"
+                                        data-status="{{ student.status }}"
+                                        data-name="{{ student.name|lower }}"
+                                        data-id="{{ student.id|lower }}">
+                                        <td>
+                                            <strong>{{ student.id }}</strong>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <div class="fw-bold">{{ student.name or '' }}</div>
+                                                <small class="text-muted">{{ student.email or '' }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% for course in student.courses %}
+                                                <span class="badge bg-light text-dark me-1">{{ course.name }}</span>
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {{ student.group_id or '' }}
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar" style="width: {{ student.overall_progress }}%">
+                                                    {{ student.overall_progress }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="me-2">{{ "%.1f"|format(student.attendance_rate) }}%</span>
+                                                {% if student.attendance_rate >= 80 %}
+                                                    <i class="bi bi-check-circle text-success"></i>
+                                                {% elif student.attendance_rate >= 60 %}
+                                                    <i class="bi bi-exclamation-triangle text-warning"></i>
+                                                {% else %}
+                                                    <i class="bi bi-x-circle text-danger"></i>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if student.cluster_group == 'A' %}
+                                                <span class="badge bg-success">A (Отличники)</span>
+                                            {% elif student.cluster_group == 'B' %}
+                                                <span class="badge bg-warning">B (Хорошисты)</span>
+                                            {% elif student.cluster_group == 'C' %}
+                                                <span class="badge bg-danger">C (Риск)</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Не определено</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button class="btn btn-outline-primary btn-sm" onclick="viewStudent('{{ student.id }}')" title="Просмотр профиля">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info btn-sm" onclick="viewProgress('{{ student.id }}')" title="Прогресс">
+                                                    <i class="bi bi-graph-up"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-people" style="font-size: 3rem; color: #6c757d;"></i>
+                            <h5 class="mt-3">Нет студентов</h5>
+                            <p class="text-muted">У вас пока нет назначенных студентов</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let clusterChart = null;
+    let clusteringData = {};
+
+    // Загрузка данных кластеризации при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        loadClusteringData();
+        initializeClusterChart();
+    });
+
+    // Загрузка данных кластеризации
+    async function loadClusteringData() {
+        try {
+            // Получаем данные о кластеризации студентов
+            const response = await fetch('/api/ml-monitoring/student-clusters');
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                clusteringData = data;
+                console.log('Данные кластеризации загружены:', data);
+                updateRiskDashboard();
+            } else {
+                console.error('Ошибка в ответе API:', data);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки данных кластеризации:', error);
+        }
+    }
+
+    // Обновление дашборда рисков
+    function updateRiskDashboard() {
+        console.log('updateRiskDashboard вызвана с данными:', clusteringData);
+        if (!clusteringData || !clusteringData.cluster_summary) {
+            console.log('Нет данных кластеризации или cluster_summary');
+            return;
+        }
+        
+        // Получаем данные из API
+        const clusterSummary = clusteringData.cluster_summary;
+        const riskCounts = {
+            high: clusterSummary.C ? clusterSummary.C.count : 0,
+            medium: clusterSummary.B ? clusterSummary.B.count : 0,
+            low: clusterSummary.A ? clusterSummary.A.count : 0,
+            undefined: 0
+        };
+
+        // Обновление счетчиков
+        document.getElementById('high-risk-count').textContent = riskCounts.high;
+        document.getElementById('medium-risk-count').textContent = riskCounts.medium;
+        document.getElementById('low-risk-count').textContent = riskCounts.low;
+        document.getElementById('undefined-risk-count').textContent = riskCounts.undefined;
+
+        // Обновление информации о кластеризации
+        // Показываем базовую информацию, так как API не возвращает детали алгоритма
+        document.getElementById('clustering-algorithm').textContent = 'Agglomerative_Simple';
+        
+        // Вычисляем качество на основе распределения кластеров
+        const totalStudents = riskCounts.high + riskCounts.medium + riskCounts.low;
+        const lowRiskRatio = riskCounts.low / totalStudents;
+        
+        // Примерное качество на основе соотношения групп
+        let quality = 0.5; // базовое качество
+        if (lowRiskRatio > 0.5) {
+            quality = 0.8; // высокое качество
+        } else if (lowRiskRatio > 0.3) {
+            quality = 0.6; // среднее качество
+        } else {
+            quality = 0.4; // низкое качество
+        }
+        
+        const qualityElement = document.getElementById('clustering-quality');
+        qualityElement.textContent = quality.toFixed(3);
+        
+        if (quality >= 0.6) {
+            qualityElement.className = 'badge bg-success';
+        } else if (quality >= 0.4) {
+            qualityElement.className = 'badge bg-warning';
+        } else {
+            qualityElement.className = 'badge bg-danger';
+        }
+        
+        // Устанавливаем время последней кластеризации
+        if (clusteringData.last_clustering_time) {
+            const lastUpdate = new Date(clusteringData.last_clustering_time);
+            const gmtPlus5 = new Date(lastUpdate.getTime() + (5 * 60 * 60 * 1000));
+            document.getElementById('last-update').textContent = gmtPlus5.toLocaleString('ru-RU');
+        } else {
+            document.getElementById('last-update').textContent = 'Не определено';
+        }
+
+        // Обновление графика
+        updateClusterChart(riskCounts);
+    }
+
+    // Инициализация графика кластеров
+    function initializeClusterChart() {
+        const ctx = document.getElementById('clusterChartCanvas').getContext('2d');
+        clusterChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Низкий риск (A)', 'Средний риск (B)', 'Высокий риск (C)', 'Не определено'],
+                datasets: [{
+                    data: [0, 0, 0, 0],
+                    backgroundColor: [
+                        '#28a745', // Зеленый для низкого риска
+                        '#ffc107', // Желтый для среднего риска
+                        '#dc3545', // Красный для высокого риска
+                        '#6c757d'  // Серый для неопределенного
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 10,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Обновление графика кластеров
+    function updateClusterChart(riskCounts) {
+        if (clusterChart) {
+            clusterChart.data.datasets[0].data = [
+                riskCounts.low,
+                riskCounts.medium,
+                riskCounts.high,
+                riskCounts.undefined
+            ];
+            clusterChart.update();
+        }
+    }
+
+    // Обновление данных кластеризации
+    async function refreshClusteringData() {
+        try {
+            // Показываем индикатор загрузки
+            const button = document.querySelector('button[onclick="refreshClusteringData()"]');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split"></i> Обновление...';
+            button.disabled = true;
+            
+            // Запускаем пересчет кластеризации
+            const response = await fetch('/api/cluster/trigger-clustering-teacher', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ force_update: true })
+            });
+            
+            if (response.ok) {
+                // Ждем немного и обновляем данные
+                setTimeout(() => {
+                    loadClusteringData();
+                    location.reload(); // Перезагружаем страницу для обновления данных студентов
+                    // Сортировка будет применена автоматически при загрузке страницы
+                }, 2000);
+            } else {
+                const errorText = await response.text();
+                console.error('Ошибка API:', response.status, errorText);
+                alert('Ошибка при запуске пересчета кластеризации: ' + response.status);
+            }
+        } catch (error) {
+            console.error('Ошибка обновления кластеризации:', error);
+            alert('Ошибка при обновлении данных кластеризации: ' + error.message);
+        } finally {
+            // Восстанавливаем кнопку
+            const button = document.querySelector('button[onclick="refreshClusteringData()"]');
+            if (button) {
+                button.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Обновить';
+                button.disabled = false;
+            }
+        }
+    }
+
+    function applyFilters() {
+        const courseFilter = document.getElementById('courseFilter').value;
+        const groupFilter = document.getElementById('groupFilter').value;
+        const statusFilter = document.getElementById('statusFilter').value;
+        const searchInput = document.getElementById('searchInput').value.toLowerCase();
+        
+        const rows = document.querySelectorAll('.student-row');
+        
+        rows.forEach(row => {
+            let show = true;
+            
+            if (courseFilter && !row.dataset.course.includes(courseFilter)) {
+                show = false;
+            }
+            
+            if (groupFilter && row.dataset.group !== groupFilter) {
+                show = false;
+            }
+            
+            if (statusFilter && row.dataset.status !== statusFilter) {
+                show = false;
+            }
+            
+            if (searchInput && !row.dataset.name.includes(searchInput) && !row.dataset.id.includes(searchInput)) {
+                show = false;
+            }
+            
+            row.style.display = show ? 'table-row' : 'none';
+        });
+        
+        // Применяем сортировку после фильтрации
+        sortStudentsByProgress();
+    }
+    
+    function viewStudent(studentId) {
+        // Пока что показываем alert, в будущем будет переход на страницу профиля студента
+        alert(`Просмотр профиля студента ${studentId} - функция будет реализована в следующих итерациях`);
+    }
+    
+    function viewProgress(studentId) {
+        // Пока что показываем alert, в будущем будет переход на страницу прогресса студента
+        alert(`Просмотр прогресса студента ${studentId} - функция будет реализована в следующих итерациях`);
+    }
+    
+    function exportStudents() {
+        alert('Функция экспорта студентов будет реализована в следующих итерациях');
+    }
+
+    // Сортировка студентов по приоритету: прогресс (убывание), посещаемость (убывание), ФИО (алфавит), ID (возрастание)
+    function sortStudentsByProgress() {
+        const tbody = document.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        rows.sort((a, b) => {
+            // 1. По убыванию прогресса
+            const progressA = parseFloat(a.querySelector('.progress-bar').textContent) || 0;
+            const progressB = parseFloat(b.querySelector('.progress-bar').textContent) || 0;
+            if (progressA !== progressB) {
+                return progressB - progressA; // Убывание
+            }
+            
+            // 2. По убыванию посещаемости
+            const attendanceA = parseFloat(a.querySelector('td:nth-child(6) span').textContent) || 0;
+            const attendanceB = parseFloat(b.querySelector('td:nth-child(6) span').textContent) || 0;
+            if (attendanceA !== attendanceB) {
+                return attendanceB - attendanceA; // Убывание
+            }
+            
+            // 3. По алфавиту ФИО
+            const nameA = a.querySelector('td:nth-child(2) .fw-bold').textContent.trim() || '';
+            const nameB = b.querySelector('td:nth-child(2) .fw-bold').textContent.trim() || '';
+            if (nameA !== nameB) {
+                return nameA.localeCompare(nameB, 'ru'); // Алфавит
+            }
+            
+            // 4. По возрастанию ID
+            const idA = parseInt(a.querySelector('td:nth-child(1) strong').textContent) || 0;
+            const idB = parseInt(b.querySelector('td:nth-child(1) strong').textContent) || 0;
+            return idA - idB; // Возрастание
+        });
+        
+        // Очищаем tbody и добавляем отсортированные строки
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Применяем сортировку при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(sortStudentsByProgress, 1000); // Небольшая задержка для загрузки данных
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="bi bi-tools"></i> Техническая диагностика</h1>
+                    <p class="text-muted">Детальная информация о компонентах системы</p>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">Обновлено: {{ last_updated }}</small>
+                    <br>
+                    <a href="/status" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-arrow-left"></i> Назад к статусу
+                    </a>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Обновить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> Ошибка загрузки данных: {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- System Information -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-info-circle"></i> Информация о системе</h5>
+                </div>
+                <div class="card-body">
+                    {% if system_info %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>Платформа:</strong></td>
+                                        <td>{{ system_info.platform }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Система:</strong></td>
+                                        <td>{{ system_info.system }} {{ system_info.release }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Архитектура:</strong></td>
+                                        <td>{{ system_info.machine }}</td>
+                                    </tr>
+                                    {% if system_info.processor %}
+                                    <tr>
+                                        <td><strong>Процессор:</strong></td>
+                                        <td>{{ system_info.processor }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td><strong>Python:</strong></td>
+                                        <td>{{ system_info.python_version }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Хост:</strong></td>
+                                        <td>{{ system_info.hostname }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>Процессы:</strong></td>
+                                        <td>{{ system_info.processes }}</td>
+                                    </tr>
+                                    {% if system_info.load_average %}
+                                    <tr>
+                                        <td><strong>Нагрузка:</strong></td>
+                                        <td>{{ system_info.load_average }}</td>
+                                    </tr>
+                                    {% endif %}
+                                </table>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Информация о системе недоступна</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Diagnostics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-database"></i> Диагностика базы данных</h5>
+                </div>
+                <div class="card-body">
+                    {% if db_diagnostics %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>Подключение:</strong></td>
+                                        <td>
+                                            {% if db_diagnostics.connection == 'connected' %}
+                                                <span class="badge bg-success">Подключено</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">{{ db_diagnostics.connection }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Версия:</strong></td>
+                                        <td><small>{{ db_diagnostics.version }}</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Размер:</strong></td>
+                                        <td>{{ db_diagnostics.size }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Активные соединения:</strong></td>
+                                        <td>{{ db_diagnostics.connections }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Таблицы в базе данных:</h6>
+                                {% if db_diagnostics.tables %}
+                                    <div class="row">
+                                        {% for table in db_diagnostics.tables %}
+                                        <div class="col-md-6">
+                                            <span class="badge bg-light text-dark">{{ table }}</span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">Таблицы не найдены</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Диагностика базы данных недоступна</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Diagnostics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-gear"></i> Диагностика сервисов</h5>
+                </div>
+                <div class="card-body">
+                    {% if service_diagnostics %}
+                        <div class="row">
+                            {% for service, info in service_diagnostics.items() %}
+                            <div class="col-md-3 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ service|title }}</h6>
+                                        <p class="card-text">
+                                            <strong>Статус:</strong>
+                                            {% if info.status == 'running' %}
+                                                <span class="badge bg-success">Запущен</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Остановлен</span>
+                                            {% endif %}
+                                        </p>
+                                        {% if info.port %}
+                                            <p class="card-text"><strong>Порт:</strong> {{ info.port }}</p>
+                                        {% endif %}
+                                        {% if info.workers %}
+                                            <p class="card-text"><strong>Воркеры:</strong> {{ info.workers }}</p>
+                                        {% endif %}
+                                        {% if info.connections %}
+                                            <p class="card-text"><strong>Соединения:</strong> {{ info.connections }}</p>
+                                        {% endif %}
+                                        {% if info.memory_usage %}
+                                            <p class="card-text"><strong>Память:</strong> {{ info.memory_usage }}</p>
+                                        {% endif %}
+                                        {% if info.tasks_processed %}
+                                            <p class="card-text"><strong>Задач:</strong> {{ info.tasks_processed }}</p>
+                                        {% endif %}
+                                        <p class="card-text"><strong>Время работы:</strong> {{ info.uptime }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Диагностика сервисов недоступна</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Diagnostics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-wifi"></i> Сетевая диагностика</h5>
+                </div>
+                <div class="card-body">
+                    {% if network_diagnostics %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Сетевые интерфейсы:</h6>
+                                {% if network_diagnostics.interfaces %}
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Интерфейс</th>
+                                                <th>IP адрес</th>
+                                                <th>Маска</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for interface in network_diagnostics.interfaces %}
+                                            <tr>
+                                                <td>{{ interface.name }}</td>
+                                                <td>{{ interface.ip }}</td>
+                                                <td>{{ interface.netmask }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                {% else %}
+                                    <p class="text-muted">Интерфейсы не найдены</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Сетевая статистика:</h6>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>Активные соединения:</strong></td>
+                                        <td>{{ network_diagnostics.connections }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Отправлено байт:</strong></td>
+                                        <td>{{ (network_diagnostics.bytes_sent / 1024 / 1024)|round(2) }} MB</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Получено байт:</strong></td>
+                                        <td>{{ (network_diagnostics.bytes_recv / 1024 / 1024)|round(2) }} MB</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Отправлено пакетов:</strong></td>
+                                        <td>{{ network_diagnostics.packets_sent }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Получено пакетов:</strong></td>
+                                        <td>{{ network_diagnostics.packets_recv }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Сетевая диагностика недоступна</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

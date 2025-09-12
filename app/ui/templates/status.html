@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    .status-healthy { background-color: #28a745; }
+    .status-warning { background-color: #ffc107; }
+    .status-error { background-color: #dc3545; }
+    .status-unknown { background-color: #6c757d; }
+    
+    .metric-card {
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .progress-thin {
+        height: 8px;
+    }
+    
+    .incident-item {
+        border-left: 4px solid #dee2e6;
+        padding-left: 15px;
+        margin-bottom: 15px;
+    }
+    .incident-warning { border-left-color: #ffc107; }
+    .incident-error { border-left-color: #dc3545; }
+    .incident-info { border-left-color: #17a2b8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="bi bi-activity"></i> Статус системы</h1>
+                    <p class="text-muted">Мониторинг состояния PulseEdu</p>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">Обновлено: {{ last_updated }}</small>
+                    <br>
+                    <a href="/status/diagnostics" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-tools"></i> Диагностика
+                    </a>
+                    <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Обновить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> Ошибка загрузки данных: {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- System Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-cpu"></i> Обзор системы</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="metric-card text-center p-3">
+                                <i class="bi bi-cpu text-primary" style="font-size: 2rem;"></i>
+                                <h5 class="mt-2">CPU</h5>
+                                <h3 class="text-primary">{{ "%.1f"|format(system_metrics.cpu_usage) }}%</h3>
+                                <div class="progress progress-thin">
+                                    <div class="progress-bar" style="width: {{ system_metrics.cpu_usage }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card text-center p-3">
+                                <i class="bi bi-memory text-info" style="font-size: 2rem;"></i>
+                                <h5 class="mt-2">Память</h5>
+                                <h3 class="text-info">{{ "%.1f"|format(system_metrics.memory_usage) }}%</h3>
+                                <div class="progress progress-thin">
+                                    <div class="progress-bar bg-info" style="width: {{ system_metrics.memory_usage }}%"></div>
+                                </div>
+                                <small class="text-muted">{{ system_metrics.memory_available }}GB / {{ system_metrics.memory_total }}GB</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card text-center p-3">
+                                <i class="bi bi-hdd text-warning" style="font-size: 2rem;"></i>
+                                <h5 class="mt-2">Диск</h5>
+                                <h3 class="text-warning">{{ "%.1f"|format(system_metrics.disk_usage) }}%</h3>
+                                <div class="progress progress-thin">
+                                    <div class="progress-bar bg-warning" style="width: {{ system_metrics.disk_usage }}%"></div>
+                                </div>
+                                <small class="text-muted">{{ system_metrics.disk_free }}GB / {{ system_metrics.disk_total }}GB</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card text-center p-3">
+                                <i class="bi bi-clock text-success" style="font-size: 2rem;"></i>
+                                <h5 class="mt-2">Время работы</h5>
+                                <h3 class="text-success">{{ system_metrics.uptime }}</h3>
+                                <small class="text-muted">Запуск: {{ system_metrics.boot_time }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Component Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-gear"></i> Статус компонентов</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if component_status %}
+                            {% for component, status in component_status.items() %}
+                            <div class="col-md-3 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="status-indicator status-{{ status.status }}"></span>
+                                    <div>
+                                        <h6 class="mb-0">{{ component|title }}</h6>
+                                        <small class="text-muted">
+                                            {% if status.status == 'healthy' %}
+                                                <span class="text-success">Работает</span>
+                                            {% elif status.status == 'warning' %}
+                                                <span class="text-warning">Предупреждение</span>
+                                            {% elif status.status == 'unhealthy' %}
+                                                <span class="text-danger">Ошибка</span>
+                                            {% else %}
+                                                <span class="text-muted">Неизвестно</span>
+                                            {% endif %}
+                                        </small>
+                                        <br>
+                                        <small class="text-muted">
+                                            {% if status.response_time %}
+                                                {{ status.response_time }}ms
+                                            {% endif %}
+                                            {% if status.version %}
+                                                | {{ status.version }}
+                                            {% endif %}
+                                            {% if status.size %}
+                                                | {{ status.size }}
+                                            {% endif %}
+                                            {% if status.active_workers %}
+                                                | {{ status.active_workers }} воркеров
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="col-12">
+                                <p class="text-muted text-center">Статус компонентов недоступен</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-speedometer2"></i> Производительность</h5>
+                </div>
+                <div class="card-body">
+                    {% if performance_metrics %}
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <h6>CPU процесса</h6>
+                                <h4 class="text-primary">{{ "%.1f"|format(performance_metrics.process_info.cpu_percent) }}%</h4>
+                            </div>
+                            <div class="col-3">
+                                <h6>Память процесса</h6>
+                                <h4 class="text-info">{{ "%.1f"|format(performance_metrics.process_info.memory_mb) }}MB</h4>
+                            </div>
+                            <div class="col-3">
+                                <h6>Потоки</h6>
+                                <h4 class="text-warning">{{ performance_metrics.process_info.threads }}</h4>
+                            </div>
+                            <div class="col-3">
+                                <h6>Открытые файлы</h6>
+                                <h4 class="text-success">{{ performance_metrics.process_info.open_files }}</h4>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <h6>Нагрузка 1 мин</h6>
+                                <h4 class="text-primary">{{ "%.2f"|format(performance_metrics.system_load.load_1min) if performance_metrics.system_load.load_1min != "N/A" else "N/A" }}</h4>
+                            </div>
+                            <div class="col-4">
+                                <h6>Нагрузка 5 мин</h6>
+                                <h4 class="text-warning">{{ "%.2f"|format(performance_metrics.system_load.load_5min) if performance_metrics.system_load.load_5min != "N/A" else "N/A" }}</h4>
+                            </div>
+                            <div class="col-4">
+                                <h6>Нагрузка 15 мин</h6>
+                                <h4 class="text-info">{{ "%.2f"|format(performance_metrics.system_load.load_15min) if performance_metrics.system_load.load_15min != "N/A" else "N/A" }}</h4>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center">Данные о производительности недоступны</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-graph-up"></i> График нагрузки</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="loadChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incident History -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-exclamation-triangle"></i> История инцидентов</h5>
+                </div>
+                <div class="card-body">
+                    {% if incident_history %}
+                        {% for incident in incident_history %}
+                        <div class="incident-item incident-{{ incident.severity }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">
+                                        {% if incident.severity == 'error' %}
+                                            <i class="bi bi-x-circle text-danger"></i>
+                                        {% elif incident.severity == 'warning' %}
+                                            <i class="bi bi-exclamation-triangle text-warning"></i>
+                                        {% else %}
+                                            <i class="bi bi-info-circle text-info"></i>
+                                        {% endif %}
+                                        {{ incident.message }}
+                                    </h6>
+                                    <small class="text-muted">
+                                        <i class="bi bi-gear"></i> {{ incident.component|title }}
+                                        | <i class="bi bi-clock"></i> {{ incident.timestamp.strftime('%d.%m.%Y %H:%M') }}
+                                    </small>
+                                </div>
+                                <div>
+                                    {% if incident.resolved %}
+                                        <span class="badge bg-success">Решено</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Активно</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Нет активных инцидентов</h6>
+                            <p class="text-muted">Система работает стабильно</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load Chart
+    const loadCtx = document.getElementById('loadChart').getContext('2d');
+    new Chart(loadCtx, {
+        type: 'line',
+        data: {
+            labels: ['-6ч', '-5ч', '-4ч', '-3ч', '-2ч', '-1ч', 'сейчас'],
+            datasets: [{
+                label: 'CPU %',
+                data: [15, 25, 45, 60, 55, 40, 20],
+                borderColor: 'rgba(0, 123, 255, 1)',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Память %',
+                data: [30, 35, 40, 45, 50, 48, 35],
+                borderColor: 'rgba(23, 162, 184, 1)',
+                backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    // Auto-refresh every 30 seconds
+    setTimeout(() => {
+        location.reload();
+    }, 30000);
+</script>
+{% endblock %}

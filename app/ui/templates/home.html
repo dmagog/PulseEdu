@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Приветственный блок -->
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 mb-3">
+                <i class="bi bi-graph-up-arrow text-primary"></i>
+                PulseEdu
+            </h1>
+            <p class="lead text-muted">
+                Система мониторинга образовательного процесса с использованием 
+                искусственного интеллекта для генерации рекомендаций
+            </p>
+        </div>
+    </div>
+
+    <!-- Навигация по ролям -->
+    <div class="row g-4">
+        <!-- Студент -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-person-circle text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="card-title">Студент</h5>
+                    <p class="card-text text-muted">
+                        Просмотр прогресса, дедлайнов и рекомендаций
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="/student" class="btn btn-primary">
+                            <i class="bi bi-speedometer2"></i> Дашборд
+                        </a>
+                        <a href="/student/courses" class="btn btn-outline-primary">
+                            <i class="bi bi-book"></i> Мои курсы
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Преподаватель -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-person-badge text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="card-title">Преподаватель</h5>
+                    <p class="card-text text-muted">
+                        Управление студентами, просмотр рисков
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="/teacher" class="btn btn-success">
+                            <i class="bi bi-speedometer2"></i> Дашборд
+                        </a>
+                        <a href="/teacher/students" class="btn btn-outline-success">
+                            <i class="bi bi-people"></i> Студенты
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- РОП -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-graph-up text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="card-title">РОП</h5>
+                    <p class="card-text text-muted">
+                        Аналитика по программам, тренды и сводные отчеты
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="/rop" class="btn btn-warning">
+                            <i class="bi bi-speedometer2"></i> Дашборд
+                        </a>
+                        <a href="/rop/course/1" class="btn btn-outline-warning">
+                            <i class="bi bi-book"></i> Курсы
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Администратор -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-gear text-danger" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="card-title">Администратор</h5>
+                    <p class="card-text text-muted">
+                        Управление системой, импорт данных и мониторинг
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="/admin" class="btn btn-danger">
+                            <i class="bi bi-speedometer2"></i> Панель
+                        </a>
+                        <a href="/admin/settings" class="btn btn-outline-danger">
+                            <i class="bi bi-sliders"></i> Настройки
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Дополнительные функции -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">Дополнительные возможности</h3>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center">
+                    <i class="bi bi-upload text-primary mb-3" style="font-size: 2rem;"></i>
+                    <h6>Импорт данных</h6>
+                    <p class="text-muted small">
+                        Загрузка данных из Excel файлов с автоматической валидацией
+                    </p>
+                    <a href="/import" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-upload"></i> Импорт
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center">
+                    <i class="bi bi-robot text-success mb-3" style="font-size: 2rem;"></i>
+                    <h6>LLM рекомендации</h6>
+                    <p class="text-muted small">
+                        Персональные рекомендации на основе анализа успеваемости
+                    </p>
+                    <a href="/admin/llm" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-robot"></i> Мониторинг
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center">
+                    <i class="bi bi-heart-pulse text-danger mb-3" style="font-size: 2rem;"></i>
+                    <h6>Статус системы</h6>
+                    <p class="text-muted small">
+                        Проверка работоспособности всех компонентов системы
+                    </p>
+                    <a href="/healthz" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-heart-pulse"></i> Статус
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Информация о системе -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5 class="alert-heading">
+                    <i class="bi bi-info-circle"></i> О системе
+                </h5>
+                <p class="mb-0">
+                    PulseEdu v0.1.0 - это полнофункциональная система мониторинга образовательного процесса, 
+                    которая помогает студентам, преподавателям и руководителям образовательных программ 
+                    отслеживать прогресс и получать персональные рекомендации на основе анализа данных.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

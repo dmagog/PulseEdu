@@ -1,0 +1,39 @@
+<!-- Внутренняя навигация ЛК администратора -->
+<div class="row mb-4">
+    <div class="col-12">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light rounded">
+            <div class="container-fluid">
+                <div class="navbar-nav">
+                    <a class="nav-link {% if request.url.path == '/admin/' %}active{% endif %}" href="/admin/">
+                        <i class="bi bi-speedometer2"></i> Дашборд
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/admin/users' %}active{% endif %}" href="/admin/users">
+                        <i class="bi bi-people"></i> Пользователи
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/admin/staff' %}active{% endif %}" href="/admin/staff">
+                        <i class="bi bi-person-badge"></i> Персонал
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/admin/courses' %}active{% endif %}" href="/admin/courses">
+                        <i class="bi bi-book"></i> Курсы
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/admin/students' %}active{% endif %}" href="/admin/students">
+                        <i class="bi bi-mortarboard"></i> Студенты
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/admin/llm' %}active{% endif %}" href="/admin/llm">
+                        <i class="bi bi-robot"></i> LLM мониторинг
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/admin/ml-monitoring' %}active{% endif %}" href="/admin/ml-monitoring">
+                        <i class="bi bi-graph-up-arrow"></i> ML мониторинг
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/admin/import' %}active{% endif %}" href="/admin/import">
+                        <i class="bi bi-upload"></i> Импорт
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/admin/settings' %}active{% endif %}" href="/admin/settings">
+                        <i class="bi bi-gear"></i> Настройки
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </div>
+</div>
+

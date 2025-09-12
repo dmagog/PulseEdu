@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="bi bi-list-task"></i> Задания</h1>
+            <p class="text-muted">Управление заданиями и контроль выполнения</p>
+        </div>
+    </div>
+
+    <!-- Внутренняя навигация -->
+    {% include "teacher/_navigation.html" %}
+
+    <!-- Assignment Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <select class="form-select" id="courseFilter">
+                                <option value="">Все курсы</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">Все статусы</option>
+                                <option value="active">Активные</option>
+                                <option value="completed">Завершенные</option>
+                                <option value="draft">Черновики</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Поиск по названию...">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary" onclick="applyFilters()">
+                                <i class="bi bi-funnel"></i> Применить фильтры
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ assignments_stats.total_assignments }}</h4>
+                            <p class="mb-0">Всего заданий</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-list-task" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ assignments_stats.active_assignments }}</h4>
+                            <p class="mb-0">Активные</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-play-circle" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ assignments_stats.pending_submissions }}</h4>
+                            <p class="mb-0">Ожидают проверки</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-clock" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ assignments_stats.avg_completion }}%</h4>
+                            <p class="mb-0">Среднее выполнение</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignments List -->
+    <div class="row">
+        {% if assignments %}
+            {% for assignment in assignments %}
+            <div class="col-md-6 col-lg-4 mb-4 assignment-card" 
+                 data-course="{{ assignment.course_id }}" 
+                 data-status="{{ assignment.status }}"
+                 data-name="{{ assignment.title|lower }}">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">{{ assignment.title }}</h6>
+                        {% if assignment.status == 'active' %}
+                            <span class="badge bg-success">Активное</span>
+                        {% elif assignment.status == 'completed' %}
+                            <span class="badge bg-secondary">Завершено</span>
+                        {% else %}
+                            <span class="badge bg-warning">Черновик</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ assignment.description[:100] }}{% if assignment.description|length > 100 %}...{% endif %}</p>
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <small class="text-muted">Курс</small>
+                                <div class="fw-bold">{{ assignment.course_name }}</div>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted">Студентов</small>
+                                <div class="fw-bold">{{ assignment.student_count }}</div>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted">Выполнено</small>
+                                <div class="fw-bold">{{ assignment.completion_rate }}%</div>
+                            </div>
+                        </div>
+                        <div class="progress mb-3">
+                            <div class="progress-bar" style="width: {{ assignment.completion_rate }}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar"></i> {{ assignment.due_date }}
+                            </small>
+                            <small class="text-muted">
+                                <i class="bi bi-clock"></i> {{ assignment.created_at }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100" role="group">
+                            <a href="/teacher/assignment/{{ assignment.id }}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-eye"></i> Просмотр
+                            </a>
+                            <a href="/teacher/assignment/{{ assignment.id }}/submissions" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-file-text"></i> Работы
+                            </a>
+                            <a href="/teacher/assignment/{{ assignment.id }}/edit" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-pencil"></i> Редактировать
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-list-task" style="font-size: 3rem; color: #6c757d;"></i>
+                        <h5 class="mt-3">Нет заданий</h5>
+                        <p class="text-muted">У вас пока нет созданных заданий</p>
+                        <button class="btn btn-primary" onclick="createAssignment()">
+                            <i class="bi bi-plus"></i> Создать задание
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function applyFilters() {
+        const courseFilter = document.getElementById('courseFilter').value;
+        const statusFilter = document.getElementById('statusFilter').value;
+        const searchInput = document.getElementById('searchInput').value.toLowerCase();
+        
+        const cards = document.querySelectorAll('.assignment-card');
+        
+        cards.forEach(card => {
+            let show = true;
+            
+            if (courseFilter && card.dataset.course !== courseFilter) {
+                show = false;
+            }
+            
+            if (statusFilter && card.dataset.status !== statusFilter) {
+                show = false;
+            }
+            
+            if (searchInput && !card.dataset.name.includes(searchInput)) {
+                show = false;
+            }
+            
+            card.style.display = show ? 'block' : 'none';
+        });
+    }
+    
+    function createAssignment() {
+        alert('Функция создания задания будет реализована в следующих итерациях');
+    }
+</script>
+{% endblock %}

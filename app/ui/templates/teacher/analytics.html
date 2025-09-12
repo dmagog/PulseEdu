@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="bi bi-graph-up"></i> Аналитика</h1>
+            <p class="text-muted">Детальная аналитика по курсам и студентам</p>
+        </div>
+    </div>
+
+    <!-- Внутренняя навигация -->
+    {% include "teacher/_navigation.html" %}
+
+    <!-- Analytics Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <select class="form-select" id="courseFilter">
+                                <option value="">Все курсы</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="periodFilter">
+                                <option value="week">За неделю</option>
+                                <option value="month" selected>За месяц</option>
+                                <option value="semester">За семестр</option>
+                                <option value="year">За год</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="metricFilter">
+                                <option value="all">Все метрики</option>
+                                <option value="attendance">Посещаемость</option>
+                                <option value="progress">Прогресс</option>
+                                <option value="grades">Оценки</option>
+                                <option value="engagement">Вовлеченность</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary" onclick="updateAnalytics()">
+                                <i class="bi bi-arrow-clockwise"></i> Обновить
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="exportAnalytics()">
+                                <i class="bi bi-download"></i> Экспорт
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up text-success" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Средний прогресс</h5>
+                    <h3 class="text-success">{{ analytics.avg_progress }}%</h3>
+                    <small class="text-muted">
+                        <i class="bi bi-arrow-up text-success"></i> +{{ analytics.progress_change }}% за период
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-calendar-check text-info" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Посещаемость</h5>
+                    <h3 class="text-info">{{ analytics.avg_attendance }}%</h3>
+                    <small class="text-muted">
+                        <i class="bi bi-arrow-up text-success"></i> +{{ analytics.attendance_change }}% за период
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-check-circle text-primary" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Завершенные задания</h5>
+                    <h3 class="text-primary">{{ analytics.completed_tasks }}</h3>
+                    <small class="text-muted">из {{ analytics.total_tasks }} заданий</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-2">Студенты в зоне риска</h5>
+                    <h3 class="text-warning">{{ analytics.at_risk_students }}</h3>
+                    <small class="text-muted">{{ analytics.at_risk_percentage }}% от общего числа</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-bar-chart"></i> Прогресс по курсам</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="courseProgressChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-pie-chart"></i> Распределение студентов</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="studentDistributionChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trends Row -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-graph-up"></i> Тренд посещаемости</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="attendanceTrendChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-graph-up"></i> Тренд выполнения заданий</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="taskCompletionChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Analytics -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-table"></i> Детальная аналитика по курсам</h5>
+                </div>
+                <div class="card-body">
+                    {% if course_analytics %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Курс</th>
+                                        <th>Студенты</th>
+                                        <th>Средний прогресс</th>
+                                        <th>Посещаемость</th>
+                                        <th>Завершенные задания</th>
+                                        <th>Студенты в зоне риска</th>
+                                        <th>Рейтинг</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for course in course_analytics %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">{{ course.name }}</div>
+                                            <small class="text-muted">{{ course.code }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ course.student_count }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar" style="width: {{ course.avg_progress }}%">
+                                                    {{ course.avg_progress }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="me-2">{{ course.avg_attendance }}%</span>
+                                                {% if course.avg_attendance >= 80 %}
+                                                    <i class="bi bi-check-circle text-success"></i>
+                                                {% elif course.avg_attendance >= 60 %}
+                                                    <i class="bi bi-exclamation-triangle text-warning"></i>
+                                                {% else %}
+                                                    <i class="bi bi-x-circle text-danger"></i>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">{{ course.completed_tasks }}</span>
+                                            <small class="text-muted">/ {{ course.total_tasks }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-danger">{{ course.at_risk_count }}</span>
+                                            <small class="text-muted">({{ course.at_risk_percentage }}%)</small>
+                                        </td>
+                                        <td>
+                                            {% if course.rating >= 4.5 %}
+                                                <span class="badge bg-success">Отлично</span>
+                                            {% elif course.rating >= 3.5 %}
+                                                <span class="badge bg-warning">Хорошо</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Требует внимания</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Нет данных для отображения</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Course Progress Chart
+    const courseProgressCtx = document.getElementById('courseProgressChart').getContext('2d');
+    new Chart(courseProgressCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ course_names|tojson }},
+            datasets: [{
+                label: 'Прогресс (%)',
+                data: {{ course_progress|tojson }},
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    // Student Distribution Chart
+    const studentDistributionCtx = document.getElementById('studentDistributionChart').getContext('2d');
+    new Chart(studentDistributionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Отличники', 'Хорошисты', 'В зоне риска'],
+            datasets: [{
+                data: [{{ analytics.excellent_students }}, {{ analytics.good_students }}, {{ analytics.at_risk_students }}],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Attendance Trend Chart
+    const attendanceTrendCtx = document.getElementById('attendanceTrendChart').getContext('2d');
+    new Chart(attendanceTrendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ attendance_dates|tojson }},
+            datasets: [{
+                label: 'Посещаемость (%)',
+                data: {{ attendance_values|tojson }},
+                borderColor: 'rgba(23, 162, 184, 1)',
+                backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    // Task Completion Chart
+    const taskCompletionCtx = document.getElementById('taskCompletionChart').getContext('2d');
+    new Chart(taskCompletionCtx, {
+        type: 'line',
+        data: {
+            labels: {{ task_dates|tojson }},
+            datasets: [{
+                label: 'Завершенные задания',
+                data: {{ task_completion_values|tojson }},
+                borderColor: 'rgba(40, 167, 69, 1)',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    function updateAnalytics() {
+        // TODO: Implement analytics update
+        alert('Функция обновления аналитики будет реализована в следующих итерациях');
+    }
+    
+    function exportAnalytics() {
+        // TODO: Implement analytics export
+        alert('Функция экспорта аналитики будет реализована в следующих итерациях');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+<!-- LLM Recommendations Widget -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6><i class="bi bi-lightbulb"></i> Персональные рекомендации</h6>
+    </div>
+    <div class="card-body">
+        <!-- Recommendations Content -->
+        {% if recommendations %}
+            {% for recommendation in recommendations %}
+            <div class="recommendation-item mb-3">
+                <div class="d-flex align-items-start">
+                    <div class="me-2">
+                        {% if recommendation.category == 'study' %}
+                            <i class="bi bi-book text-primary"></i>
+                        {% elif recommendation.category == 'time' %}
+                            <i class="bi bi-clock text-warning"></i>
+                        {% elif recommendation.category == 'career' %}
+                            <i class="bi bi-briefcase text-success"></i>
+                        {% else %}
+                            <i class="bi bi-lightbulb text-info"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <small class="fw-bold">{{ recommendation.title }}</small>
+                        <br>
+                        <small class="text-muted">{{ recommendation.description[:100] }}...</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center">
+                <i class="bi bi-lightbulb text-muted" style="font-size: 2rem;"></i>
+                <p class="text-muted mb-2">Нет рекомендаций</p>
+                <small class="text-muted">Система пока не сгенерировала персональные рекомендации</small>
+            </div>
+        {% endif %}
+    </div>
+</div>
+

@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="bi bi-calendar3"></i> Мое расписание</h1>
+            <p class="text-muted">Студент ID: {{ student.id }}</p>
+        </div>
+    </div>
+
+    <!-- Внутренняя навигация -->
+    {% include "student/_navigation.html" %}
+
+    <!-- Schedule Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-primary active" onclick="showView('week')">
+                                    <i class="bi bi-calendar-week"></i> Неделя
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="showView('month')">
+                                    <i class="bi bi-calendar-month"></i> Месяц
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button class="btn btn-primary" onclick="exportSchedule()">
+                                <i class="bi bi-download"></i> Экспорт
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Schedule -->
+    <div id="weekView" class="schedule-view">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-calendar-week"></i> Расписание на неделю</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Время</th>
+                                        <th>Понедельник</th>
+                                        <th>Вторник</th>
+                                        <th>Среда</th>
+                                        <th>Четверг</th>
+                                        <th>Пятница</th>
+                                        <th>Суббота</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for time_slot in schedule.time_slots %}
+                                    <tr>
+                                        <td class="fw-bold">{{ time_slot.time }}</td>
+                                        {% for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] %}
+                                        <td>
+                                            {% if schedule.lessons and schedule.lessons[day] and schedule.lessons[day][time_slot.time] %}
+                                                {% set lesson = schedule.lessons[day][time_slot.time] %}
+                                                <div class="lesson-card p-2 rounded" 
+                                                     style="background-color: {{ lesson.color }}; color: white;">
+                                                    <div class="fw-bold">{{ lesson.course_name }}</div>
+                                                    <small>{{ lesson.room }}</small>
+                                                    <br>
+                                                    <small>{{ lesson.teacher }}</small>
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Schedule -->
+    <div id="monthView" class="schedule-view" style="display: none;">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-calendar-month"></i> Расписание на месяц</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="calendar-grid">
+                            <!-- Calendar will be generated by JavaScript -->
+                            <div id="calendar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Events -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-clock"></i> Ближайшие события</h5>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_events %}
+                        {% for event in upcoming_events %}
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-calendar-event text-primary" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-1">{{ event.title }}</h6>
+                                <p class="mb-1 text-muted">{{ event.description }}</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> {{ event.date }} | 
+                                    <i class="bi bi-clock"></i> {{ event.time }}
+                                </small>
+                            </div>
+                            <div class="flex-shrink-0">
+                                {% if event.type == 'exam' %}
+                                    <span class="badge bg-danger">Экзамен</span>
+                                {% elif event.type == 'deadline' %}
+                                    <span class="badge bg-warning">Дедлайн</span>
+                                {% else %}
+                                    <span class="badge bg-info">Событие</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">Нет предстоящих событий</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showView(view) {
+        // Hide all views
+        document.querySelectorAll('.schedule-view').forEach(v => v.style.display = 'none');
+        
+        // Remove active class from all buttons
+        document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+        
+        // Show selected view
+        document.getElementById(view + 'View').style.display = 'block';
+        
+        // Add active class to clicked button
+        event.target.classList.add('active');
+        
+        // Generate calendar if month view
+        if (view === 'month') {
+            generateCalendar();
+        }
+    }
+    
+    function generateCalendar() {
+        const calendar = document.getElementById('calendar');
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        
+        let calendarHTML = '<div class="calendar-header">';
+        calendarHTML += '<div class="calendar-month">' + firstDay.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }) + '</div>';
+        calendarHTML += '</div>';
+        
+        calendarHTML += '<div class="calendar-grid">';
+        calendarHTML += '<div class="calendar-day-header">Пн</div>';
+        calendarHTML += '<div class="calendar-day-header">Вт</div>';
+        calendarHTML += '<div class="calendar-day-header">Ср</div>';
+        calendarHTML += '<div class="calendar-day-header">Чт</div>';
+        calendarHTML += '<div class="calendar-day-header">Пт</div>';
+        calendarHTML += '<div class="calendar-day-header">Сб</div>';
+        calendarHTML += '<div class="calendar-day-header">Вс</div>';
+        
+        // Add empty cells for days before the first day of the month
+        for (let i = 0; i < firstDay.getDay(); i++) {
+            calendarHTML += '<div class="calendar-day empty"></div>';
+        }
+        
+        // Add days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const isToday = day === today.getDate();
+            calendarHTML += `<div class="calendar-day ${isToday ? 'today' : ''}">${day}</div>`;
+        }
+        
+        calendarHTML += '</div>';
+        
+        calendar.innerHTML = calendarHTML;
+    }
+    
+    function exportSchedule() {
+        // TODO: Implement schedule export functionality
+        alert('Функция экспорта расписания будет реализована в следующих итерациях');
+    }
+</script>
+
+<style>
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background-color: #dee2e6;
+}
+
+.calendar-day-header {
+    background-color: #f8f9fa;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    border: 1px solid #dee2e6;
+}
+
+.calendar-day {
+    background-color: white;
+    padding: 10px;
+    min-height: 60px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+}
+
+.calendar-day.today {
+    background-color: #e3f2fd;
+    font-weight: bold;
+}
+
+.calendar-day.empty {
+    background-color: #f8f9fa;
+}
+
+.lesson-card {
+    font-size: 0.8rem;
+    margin: 2px;
+}
+</style>
+{% endblock %}

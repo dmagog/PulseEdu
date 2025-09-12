@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1><i class="bi bi-graph-up"></i> Дашборд РОП</h1>
+                <p class="text-muted">Аналитика программ и тренды</p>
+            </div>
+        </div>
+
+        <!-- Внутренняя навигация -->
+        {% include "rop/_navigation.html" %}
+
+        <!-- Program Summary -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-people text-primary" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Студенты</h5>
+                        <h3 class="text-primary">{{ dashboard.program_summary.total_students }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-book text-success" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Курсы</h5>
+                        <h3 class="text-success">{{ dashboard.program_summary.total_courses }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-check-circle text-info" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Выполнение</h5>
+                        <h3 class="text-info">{{ "%.1f"|format(dashboard.program_summary.completion_rate) }}%</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-check text-warning" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Посещаемость</h5>
+                        <h3 class="text-warning">{{ "%.1f"|format(dashboard.program_summary.attendance_rate) }}%</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <!-- 7-Day Trends -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-graph-up"></i> Тренды за 7 дней</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="trends7dChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 30-Day Trends -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-graph-up"></i> Тренды за 30 дней</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="trends30dChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Analysis and Course Performance -->
+        <div class="row">
+            <!-- Risk Analysis -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Анализ рисков</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="riskChart" width="400" height="200"></canvas>
+                        <div class="mt-3">
+                            <h6>Факторы риска:</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="bi bi-person-x"></i> Низкая посещаемость: {{ dashboard.risk_analysis.risk_factors.low_attendance }}
+                                    </small>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="bi bi-list-task"></i> Низкое выполнение: {{ dashboard.risk_analysis.risk_factors.low_completion }}
+                                    </small>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> Просроченные задания: {{ dashboard.risk_analysis.risk_factors.overdue_tasks }}
+                                    </small>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="bi bi-pause-circle"></i> Нет активности: {{ dashboard.risk_analysis.risk_factors.no_activity }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Performance -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-trophy"></i> Производительность курсов</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if dashboard.course_performance %}
+                            {% for course in dashboard.course_performance %}
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <strong>{{ course.course_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ course.total_students }} студентов | {{ course.total_tasks }} заданий
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="progress mb-1" style="width: 100px; height: 8px;">
+                                        <div class="progress-bar bg-{{ 'success' if course.performance_score > 70 else 'warning' if course.performance_score > 40 else 'danger' }}" 
+                                             role="progressbar" 
+                                             style="width: {{ course.performance_score }}%"
+                                             aria-valuenow="{{ course.performance_score }}" 
+                                             aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small class="fw-bold">{{ "%.1f"|format(course.performance_score) }}%</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">Нет данных о курсах</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 7-Day Trends Chart
+        const trends7dCtx = document.getElementById('trends7dChart').getContext('2d');
+        const trends7dChart = new Chart(trends7dCtx, {
+            type: 'line',
+            data: {
+                labels: {{ dashboard.trends_7d.dates | tojson }},
+                datasets: [{
+                    label: 'Выполнения',
+                    data: {{ dashboard.trends_7d.completions | tojson }},
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Посещения',
+                    data: {{ dashboard.trends_7d.attendance | tojson }},
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 30-Day Trends Chart
+        const trends30dCtx = document.getElementById('trends30dChart').getContext('2d');
+        const trends30dChart = new Chart(trends30dCtx, {
+            type: 'line',
+            data: {
+                labels: {{ dashboard.trends_30d.dates | tojson }},
+                datasets: [{
+                    label: 'Выполнения',
+                    data: {{ dashboard.trends_30d.completions | tojson }},
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Посещения',
+                    data: {{ dashboard.trends_30d.attendance | tojson }},
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Risk Analysis Chart
+        const riskCtx = document.getElementById('riskChart').getContext('2d');
+        const riskChart = new Chart(riskCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Высокий риск', 'Средний риск', 'Низкий риск', 'Хорошо'],
+                datasets: [{
+                    data: [
+                        {{ dashboard.risk_analysis.risk_categories.high_risk }},
+                        {{ dashboard.risk_analysis.risk_categories.medium_risk }},
+                        {{ dashboard.risk_analysis.risk_categories.low_risk }},
+                        {{ dashboard.risk_analysis.risk_categories.good }}
+                    ],
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.8)',
+                        'rgba(255, 193, 7, 0.8)',
+                        'rgba(23, 162, 184, 0.8)',
+                        'rgba(40, 167, 69, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(23, 162, 184, 1)',
+                        'rgba(40, 167, 69, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Auto-refresh dashboard data every 5 minutes
+        setInterval(function() {
+            fetch('/rop/api/dashboard')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Update summary cards
+                        document.querySelector('.text-primary').textContent = data.data.program_summary.total_students;
+                        document.querySelector('.text-success').textContent = data.data.program_summary.total_courses;
+                        document.querySelector('.text-info').textContent = data.data.program_summary.completion_rate.toFixed(1) + '%';
+                        document.querySelector('.text-warning').textContent = data.data.program_summary.attendance_rate.toFixed(1) + '%';
+                        
+                        // Update charts data
+                        trends7dChart.data.datasets[0].data = data.data.trends_7d.completions;
+                        trends7dChart.data.datasets[1].data = data.data.trends_7d.attendance;
+                        trends7dChart.update();
+                        
+                        trends30dChart.data.datasets[0].data = data.data.trends_30d.completions;
+                        trends30dChart.data.datasets[1].data = data.data.trends_30d.attendance;
+                        trends30dChart.update();
+                        
+                        riskChart.data.datasets[0].data = [
+                            data.data.risk_analysis.risk_categories.high_risk,
+                            data.data.risk_analysis.risk_categories.medium_risk,
+                            data.data.risk_analysis.risk_categories.low_risk,
+                            data.data.risk_analysis.risk_categories.good
+                        ];
+                        riskChart.update();
+                    }
+                })
+                .catch(error => console.log('Error refreshing dashboard:', error));
+        }, 300000); // 5 minutes
+    </script>
+{% endblock %}

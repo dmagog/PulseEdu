@@ -1,0 +1,42 @@
+{% extends "email/base.html" %}
+
+{% block title %}Импорт данных завершён - Pulse.EDU{% endblock %}
+
+{% block content %}
+<h2>✅ Импорт данных успешно завершён</h2>
+
+<div class="alert alert-success">
+    <strong>Задача импорта выполнена!</strong><br>
+    ID задачи: <code>{{ job_id }}</code>
+</div>
+
+<h3>Результаты импорта:</h3>
+<ul>
+    <li><strong>Обработано строк:</strong> {{ total_rows or 0 }}</li>
+    <li><strong>Импортировано студентов:</strong> {{ imported_students or 0 }}</li>
+    <li><strong>Создано занятий:</strong> {{ lessons_created or 0 }}</li>
+    <li><strong>Ошибок:</strong> {{ error_count or 0 }}</li>
+</ul>
+
+{% if error_count and error_count > 0 %}
+<div class="alert alert-warning">
+    <strong>Внимание:</strong> При импорте обнаружены ошибки. 
+    Проверьте журнал импорта для получения подробной информации.
+</div>
+{% endif %}
+
+<h3>Что дальше?</h3>
+<p>Данные успешно загружены в систему. Теперь вы можете:</p>
+<ul>
+    <li>Просматривать статистику студентов</li>
+    <li>Анализировать посещаемость и успеваемость</li>
+    <li>Получать уведомления о рисках</li>
+</p>
+
+<a href="{{ app_base_url or 'http://localhost:8000' }}/admin/import-jobs" class="button">
+    Просмотреть журнал импорта
+</a>
+
+<p><small>Время завершения: {{ completed_at or 'не указано' }}</small></p>
+{% endblock %}
+

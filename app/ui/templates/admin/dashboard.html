@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PulseEdu{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1><i class="bi bi-shield-check"></i> Админ-панель</h1>
+                <p class="text-muted">Системное управление и мониторинг</p>
+            </div>
+        </div>
+
+        <!-- Внутренняя навигация -->
+        {% include "admin/_navigation.html" %}
+
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> Ошибка: {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- System Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-people text-primary" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Студенты</h5>
+                        <h3 class="text-primary">{{ metrics.total_students }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-book text-success" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Курсы</h5>
+                        <h3 class="text-success">{{ metrics.total_courses }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-list-task text-info" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Задания</h5>
+                        <h3 class="text-info">{{ metrics.total_tasks }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-upload text-warning" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Импорты</h5>
+                        <h3 class="text-warning">{{ metrics.total_import_jobs }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Recent Imports -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-clock-history"></i> Последние импорты</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if metrics.recent_imports %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Файл</th>
+                                            <th>Статус</th>
+                                            <th>Строк</th>
+                                            <th>Ошибок</th>
+                                            <th>Создан</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for job in metrics.recent_imports %}
+                                        <tr>
+                                            <td>{{ job.original_filename }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if job.status == 'completed' else 'warning' if job.status == 'processing' else 'danger' if job.status == 'failed' else 'secondary' }}">
+                                                    {{ job.status }}
+                                                </span>
+                                            </td>
+                                            <td>{{ job.total_rows or '-' }}</td>
+                                            <td>{{ job.error_rows or 0 }}</td>
+                                            <td>{{ job.created_at.strftime('%d.%m.%Y %H:%M') if job.created_at else '-' }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">Нет недавних импортов</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-activity"></i> Статус системы</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Активные пользователи</span>
+                            <span class="badge bg-success">{{ metrics.active_users }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Время работы</span>
+                            <span class="badge bg-info">{{ metrics.system_uptime }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>База данных</span>
+                            <span class="badge bg-success">Онлайн</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Celery Worker</span>
+                            <span class="badge bg-success">Активен</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6><i class="bi bi-lightning"></i> Быстрые действия</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="/import/" class="btn btn-primary btn-sm">
+                                <i class="bi bi-upload"></i> Загрузить файл
+                            </a>
+                            <a href="/admin/import-jobs" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-list"></i> Журнал импорта
+                            </a>
+                            <a href="/admin/users" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-people"></i> Пользователи
+                            </a>
+                            <a href="/admin/settings" class="btn btn-outline-warning btn-sm">
+                                <i class="bi bi-gear"></i> Настройки
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

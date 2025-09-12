@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PulseEdu{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            margin-top: auto;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .main-content {
+            flex: 1;
+        }
+        .role-badge {
+            font-size: 0.8em;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Шапка сайта -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-graph-up-arrow"></i> PulseEdu
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <!-- Навигация для студентов -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="/student" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person"></i> Студент
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/student">
+                                <i class="bi bi-speedometer2"></i> Дашборд
+                            </a></li>
+                            <li><a class="dropdown-item" href="/student/courses">
+                                <i class="bi bi-book"></i> Мои курсы
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Навигация для преподавателей -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="/teacher" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-badge"></i> Преподаватель
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/teacher">
+                                <i class="bi bi-speedometer2"></i> Дашборд
+                            </a></li>
+                            <li><a class="dropdown-item" href="/teacher/students">
+                                <i class="bi bi-people"></i> Студенты
+                            </a></li>
+                            <li><a class="dropdown-item" href="/teacher/recommendations">
+                                <i class="bi bi-lightbulb"></i> Рекомендации
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Навигация для РОП -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="/rop" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-graph-up"></i> РОП
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/rop">
+                                <i class="bi bi-speedometer2"></i> Дашборд
+                            </a></li>
+                            <li><a class="dropdown-item" href="/rop/course/1">
+                                <i class="bi bi-book"></i> Курсы
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Навигация для администраторов -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="/admin" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear"></i> Администрирование
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin">
+                                <i class="bi bi-speedometer2"></i> Панель управления
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Управление пользователями</h6></li>
+                            <li><a class="dropdown-item" href="/admin/users">
+                                <i class="bi bi-people"></i> Все пользователи
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/staff">
+                                <i class="bi bi-people-fill"></i> Персонал
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/students">
+                                <i class="bi bi-mortarboard"></i> Студенты
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/course-assignments">
+                                <i class="bi bi-book"></i> Назначение курсов
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Система</h6></li>
+                            <li><a class="dropdown-item" href="/admin/import-jobs">
+                                <i class="bi bi-upload"></i> Импорт данных
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/llm">
+                                <i class="bi bi-robot"></i> Мониторинг LLM
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/settings">
+                                <i class="bi bi-sliders"></i> Настройки
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/import">
+                            <i class="bi bi-upload"></i> Импорт
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth/login">
+                            <i class="bi bi-box-arrow-in-right"></i> Войти
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Подвал сайта -->
+    <footer class="footer py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>PulseEdu</h5>
+                    <p class="text-muted">
+                        Система мониторинга образовательного процесса с использованием 
+                        искусственного интеллекта для генерации рекомендаций.
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Быстрые ссылки</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="/student" class="text-decoration-none">Студент</a></li>
+                        <li><a href="/teacher" class="text-decoration-none">Преподаватель</a></li>
+                        <li><a href="/rop" class="text-decoration-none">РОП</a></li>
+                        <li><a href="/admin" class="text-decoration-none">Админ</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6>Поддержка</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="/healthz" class="text-decoration-none">Статус системы</a></li>
+                        <li><a href="https://github.com/dmagog/PulseEdu" class="text-decoration-none" target="_blank">GitHub</a></li>
+                        <li><a href="/admin/settings" class="text-decoration-none">Настройки</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        © 2025 PulseEdu v0.1.0. Все права защищены.
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        <i class="bi bi-heart-fill text-danger"></i> 
+                        Сделано с любовью для образования
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

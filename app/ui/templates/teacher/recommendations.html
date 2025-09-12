@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block title %}Управление рекомендациями - PulseEdu{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="bi bi-lightbulb"></i> Управление рекомендациями</h1>
+            <p class="text-muted">Просмотр, одобрение и редактирование LLM рекомендаций для студентов</p>
+        </div>
+    </div>
+    
+    {% include "teacher/_navigation.html" %}
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="courseFilter" class="form-label">Курс</label>
+                            <select class="form-select" id="courseFilter" onchange="filterRecommendations()">
+                                <option value="">Все курсы</option>
+                                <!-- Options will be populated by JavaScript -->
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="statusFilter" class="form-label">Статус</label>
+                            <select class="form-select" id="statusFilter" onchange="filterRecommendations()">
+                                <option value="">Все статусы</option>
+                                <option value="pending">Ожидают одобрения</option>
+                                <option value="approved">Одобрены</option>
+                                <option value="rejected">Отклонены</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="ratingFilter" class="form-label">Оценка студента</label>
+                            <select class="form-select" id="ratingFilter" onchange="filterRecommendations()">
+                                <option value="">Все оценки</option>
+                                <option value="1">1 звезда</option>
+                                <option value="2">2 звезды</option>
+                                <option value="3">3 звезды</option>
+                                <option value="4">4 звезды</option>
+                                <option value="5">5 звезд</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="searchInput" class="form-label">Поиск по студенту</label>
+                            <input type="text" class="form-control" id="searchInput" placeholder="ID студента..." onkeyup="filterRecommendations()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="bi bi-list-ul"></i> Рекомендации</h5>
+                    <button class="btn btn-outline-primary btn-sm" onclick="refreshRecommendations()">
+                        <i class="bi bi-arrow-clockwise"></i> Обновить
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="loading" class="text-center" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                        <p class="text-muted mt-2">Загружаем рекомендации...</p>
+                    </div>
+                    
+                    <div id="recommendationsList">
+                        <!-- Recommendations will be loaded here -->
+                    </div>
+                    
+                    <div id="noResults" class="text-center text-muted" style="display: none;">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">Рекомендации не найдены</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Recommendation Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать рекомендацию</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="editText" class="form-label">Текст рекомендации</label>
+                    <textarea class="form-control" id="editText" rows="6" placeholder="Введите текст рекомендации..."></textarea>
+                    <div class="form-text">Поддерживается Markdown форматирование</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Предварительный просмотр</label>
+                    <div id="preview" class="border p-3 bg-light rounded"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="saveEditedRecommendation()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .recommendation-item {
+        background-color: #f8f9fa;
+        border-left: 4px solid #ffc107 !important;
+    }
+
+    .recommendation-content {
+        line-height: 1.6;
+    }
+
+    .recommendation-content h1,
+    .recommendation-content h2,
+    .recommendation-content h3,
+    .recommendation-content h4,
+    .recommendation-content h5,
+    .recommendation-content h6 {
+        font-size: 1.1em;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .recommendation-content ul,
+    .recommendation-content ol {
+        margin-bottom: 0.5rem;
+    }
+
+    .recommendation-content code {
+        background-color: #e9ecef;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+        font-size: 0.875em;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allRecommendations = [];
+    let currentEditId = null;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        loadRecommendations();
+    });
+
+    async function loadRecommendations() {
+        showLoading();
+        
+        try {
+            // This would be a new endpoint to get all recommendations for teacher review
+            const response = await fetch('/api/llm/teacher/recommendations');
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                allRecommendations = data.recommendations;
+                populateCourseFilter();
+                filterRecommendations();
+            } else {
+                showError('Ошибка загрузки рекомендаций');
+            }
+        } catch (error) {
+            console.error('Error loading recommendations:', error);
+            showError('Ошибка загрузки рекомендаций');
+        }
+    }
+
+    function populateCourseFilter() {
+        const courseFilter = document.getElementById('courseFilter');
+        const courses = [...new Set(allRecommendations.map(r => r.course_name))];
+        
+        courseFilter.innerHTML = '<option value="">Все курсы</option>';
+        courses.forEach(course => {
+            const option = document.createElement('option');
+            option.value = course;
+            option.textContent = course;
+            courseFilter.appendChild(option);
+        });
+    }
+
+    function filterRecommendations() {
+        const courseFilter = document.getElementById('courseFilter').value;
+        const statusFilter = document.getElementById('statusFilter').value;
+        const ratingFilter = document.getElementById('ratingFilter').value;
+        const searchInput = document.getElementById('searchInput').value.toLowerCase();
+        
+        let filtered = allRecommendations.filter(rec => {
+            const matchesCourse = !courseFilter || rec.course_name === courseFilter;
+            const matchesStatus = !statusFilter || rec.teacher_status === statusFilter;
+            const matchesRating = !ratingFilter || rec.student_rating == ratingFilter;
+            const matchesSearch = !searchInput || rec.student_id.toLowerCase().includes(searchInput);
+            
+            return matchesCourse && matchesStatus && matchesRating && matchesSearch;
+        });
+        
+        displayRecommendations(filtered);
+    }
+
+    function displayRecommendations(recommendations) {
+        const container = document.getElementById('recommendationsList');
+        const noResults = document.getElementById('noResults');
+        
+        if (recommendations.length === 0) {
+            container.innerHTML = '';
+            noResults.style.display = 'block';
+            return;
+        }
+        
+        noResults.style.display = 'none';
+        
+        let html = '';
+        recommendations.forEach(rec => {
+            const statusBadge = getStatusBadge(rec.teacher_status);
+            const ratingStars = generateStarRating(rec.student_rating || 0);
+            
+            html += `
+                <div class="recommendation-item border rounded p-3 mb-3">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-person-circle"></i>
+                                    Студент: ${rec.student_id}
+                                </h6>
+                                ${statusBadge}
+                            </div>
+                            <p class="text-muted mb-2">
+                                <i class="bi bi-book"></i> ${rec.course_name}
+                            </p>
+                            <div class="recommendation-content mb-3">
+                                ${rec.html_content}
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="text-muted me-3">Оценка студента:</span>
+                                ${ratingStars}
+                                <span class="text-muted ms-2">(${rec.student_rating || 0}/5)</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex flex-column gap-2">
+                                <button class="btn btn-success btn-sm" onclick="approveRecommendation(${rec.id})">
+                                    <i class="bi bi-check-circle"></i> Одобрить
+                                </button>
+                                <button class="btn btn-warning btn-sm" onclick="editRecommendation(${rec.id})">
+                                    <i class="bi bi-pencil"></i> Редактировать
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="rejectRecommendation(${rec.id})">
+                                    <i class="bi bi-x-circle"></i> Отклонить
+                                </button>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    Создано: ${new Date(rec.created_at).toLocaleDateString('ru-RU')}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+
+    function getStatusBadge(status) {
+        const badges = {
+            'pending': '<span class="badge bg-warning">Ожидает</span>',
+            'approved': '<span class="badge bg-success">Одобрено</span>',
+            'rejected': '<span class="badge bg-danger">Отклонено</span>'
+        };
+        return badges[status] || '<span class="badge bg-secondary">Неизвестно</span>';
+    }
+
+    function generateStarRating(rating) {
+        let html = '';
+        for (let i = 1; i <= 5; i++) {
+            const filled = i <= rating ? 'bi-star-fill' : 'bi-star';
+            const color = i <= rating ? 'text-warning' : 'text-muted';
+            html += `<i class="bi ${filled} ${color}"></i>`;
+        }
+        return html;
+    }
+
+    async function approveRecommendation(recommendationId) {
+        try {
+            const rec = allRecommendations.find(r => r.id === recommendationId);
+            if (!rec) return;
+            
+            const response = await fetch(`/api/llm/recommendations/${rec.student_id}/${rec.course_id}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    is_approved: true
+                })
+            });
+            
+            const data = await response.json();
+            if (data.status === 'success') {
+                rec.teacher_status = 'approved';
+                filterRecommendations();
+                showSuccessMessage('Рекомендация одобрена');
+            } else {
+                showErrorMessage(data.message || 'Ошибка одобрения');
+            }
+        } catch (error) {
+            console.error('Error approving recommendation:', error);
+            showErrorMessage('Ошибка одобрения рекомендации');
+        }
+    }
+
+    async function rejectRecommendation(recommendationId) {
+        try {
+            const rec = allRecommendations.find(r => r.id === recommendationId);
+            if (!rec) return;
+            
+            const response = await fetch(`/api/llm/recommendations/${rec.student_id}/${rec.course_id}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    is_approved: false
+                })
+            });
+            
+            const data = await response.json();
+            if (data.status === 'success') {
+                rec.teacher_status = 'rejected';
+                filterRecommendations();
+                showSuccessMessage('Рекомендация отклонена');
+            } else {
+                showErrorMessage(data.message || 'Ошибка отклонения');
+            }
+        } catch (error) {
+            console.error('Error rejecting recommendation:', error);
+            showErrorMessage('Ошибка отклонения рекомендации');
+        }
+    }
+
+    function editRecommendation(recommendationId) {
+        const rec = allRecommendations.find(r => r.id === recommendationId);
+        if (!rec) return;
+        
+        currentEditId = recommendationId;
+        document.getElementById('editText').value = rec.text_content;
+        updatePreview();
+        
+        const modal = new bootstrap.Modal(document.getElementById('editModal'));
+        modal.show();
+    }
+
+    function updatePreview() {
+        const text = document.getElementById('editText').value;
+        // Simple markdown preview (in production, use a proper markdown parser)
+        const html = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+        
+        document.getElementById('preview').innerHTML = html;
+    }
+
+    // Add event listener for textarea changes
+    document.getElementById('editText').addEventListener('input', updatePreview);
+
+    async function saveEditedRecommendation() {
+        if (!currentEditId) return;
+        
+        try {
+            const rec = allRecommendations.find(r => r.id === currentEditId);
+            if (!rec) return;
+            
+            const editedText = document.getElementById('editText').value;
+            
+            const response = await fetch(`/api/llm/recommendations/${rec.student_id}/${rec.course_id}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    is_approved: true,
+                    edited_recommendation: editedText
+                })
+            });
+            
+            const data = await response.json();
+            if (data.status === 'success') {
+                rec.text_content = editedText;
+                rec.teacher_status = 'approved';
+                filterRecommendations();
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+                modal.hide();
+                
+                showSuccessMessage('Рекомендация отредактирована и одобрена');
+            } else {
+                showErrorMessage(data.message || 'Ошибка сохранения');
+            }
+        } catch (error) {
+            console.error('Error saving edited recommendation:', error);
+            showErrorMessage('Ошибка сохранения рекомендации');
+        }
+    }
+
+    function refreshRecommendations() {
+        loadRecommendations();
+    }
+
+    function showLoading() {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('recommendationsList').style.display = 'none';
+        document.getElementById('noResults').style.display = 'none';
+    }
+
+    function hideLoading() {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('recommendationsList').style.display = 'block';
+    }
+
+    function showError(message) {
+        hideLoading();
+        showErrorMessage(message);
+    }
+
+    function showSuccessMessage(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        alert.style.top = '20px';
+        alert.style.right = '20px';
+        alert.style.zIndex = '9999';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.parentNode.removeChild(alert);
+            }
+        }, 3000);
+    }
+
+    function showErrorMessage(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+        alert.style.top = '20px';
+        alert.style.right = '20px';
+        alert.style.zIndex = '9999';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.parentNode.removeChild(alert);
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}

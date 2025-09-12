@@ -1,0 +1,29 @@
+<!-- Внутренняя навигация ЛК РОП -->
+<div class="row mb-4">
+    <div class="col-12">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light rounded">
+            <div class="container-fluid">
+                <div class="navbar-nav">
+                    <a class="nav-link {% if request.url.path == '/rop/' %}active{% endif %}" href="/rop/">
+                        <i class="bi bi-speedometer2"></i> Дашборд
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/rop/programs' %}active{% endif %}" href="/rop/programs">
+                        <i class="bi bi-diagram-3"></i> Программы
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/rop/analytics' %}active{% endif %}" href="/rop/analytics">
+                        <i class="bi bi-graph-up"></i> Аналитика
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/rop/trends' %}active{% endif %}" href="/rop/trends">
+                        <i class="bi bi-trending-up"></i> Тренды
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/rop/reports' %}active{% endif %}" href="/rop/reports">
+                        <i class="bi bi-file-earmark-text"></i> Отчеты
+                    </a>
+                    <a class="nav-link {% if request.url.path == '/rop/quality' %}active{% endif %}" href="/rop/quality">
+                        <i class="bi bi-award"></i> Качество
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </div>
+</div>
